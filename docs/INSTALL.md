@@ -27,7 +27,7 @@ The `.zip` is an alternative containing the application bundle. Quit Nyora befor
 ## Windows
 
 1. Download the matching `.exe` installer and run it.
-2. Choose the installation location and launch Nyora.
+2. After installation, launch Nyora from the Start menu.
 3. These initial builds are unsigned. Windows may show an unknown-publisher warning; confirm the source and checksum before proceeding.
 
 The `.zip` is a portable alternative. Extract the entire archive and run `Nyora.exe`; keep its resources beside it. Windows on ARM should use arm64, not x64 emulation.
@@ -42,6 +42,18 @@ chmod +x Nyora-*-linux-*.AppImage
 ```
 
 Replace `VERSION` and `ARCH` with the downloaded filename. On distributions needing FUSE 2, install the distribution's FUSE compatibility package. Alternatively extract and launch with `./Nyora-VERSION-linux-ARCH.AppImage --appimage-extract-and-run`, or use the `.tar.gz` archive and run its `nyora-desktop` executable. A graphical desktop session is required. Do not launch Nyora as root or disable Chromium's sandbox to work around desktop configuration problems.
+
+### Ubuntu sandbox startup error
+
+If Ubuntu reports that `chrome-sandbox` must be owned by root with mode `4755`, use the verified `.tar.gz` build. Extract it, then run these commands **from the extracted directory containing `nyora-desktop` and `chrome-sandbox`**:
+
+```sh
+sudo chown root:root chrome-sandbox
+sudo chmod 4755 chrome-sandbox
+./nyora-desktop
+```
+
+Repeat the sandbox setup after replacing the extracted app with a newer version. Keep the renderer sandbox enabled; these commands configure Chromium's own sandbox helper. See [Electron's sandbox documentation](https://www.electronjs.org/docs/latest/tutorial/sandbox).
 
 ## Verify a download
 

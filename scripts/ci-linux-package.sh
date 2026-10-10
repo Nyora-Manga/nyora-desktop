@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Configure Electron's sandbox helper on this disposable runner. Keep sandboxing enabled.
+node -e 'require("electron")'
+sudo chown root:root node_modules/electron/dist/chrome-sandbox
+sudo chmod 4755 node_modules/electron/dist/chrome-sandbox
 # Native account persistence is tested against a real, disposable Secret Service.
 export XDG_CURRENT_DESKTOP=GNOME
 export GNOME_KEYRING_CONTROL="$(mktemp -d)"
