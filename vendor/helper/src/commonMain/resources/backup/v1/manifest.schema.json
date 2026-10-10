@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nyora.app/backup/v1/manifest.schema.json",
+  "title": "Nyora portable backup manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "schemaVersion", "archiveId", "createdAt", "appVersion", "platform", "mode", "sections", "omissions"],
+  "properties": {
+    "format": { "const": "app.nyora.backup" },
+    "schemaVersion": { "const": 1 },
+    "archiveId": { "type": "string", "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" },
+    "createdAt": { "type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$" },
+    "appVersion": { "type": "string", "minLength": 1 },
+    "platform": { "type": "string", "minLength": 1 },
+    "mode": { "const": "portable-data" },
+    "sections": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entry", "schemaVersion", "recordCount", "byteLength", "sha256", "optional"],
+        "properties": {
+          "entry": { "enum": ["sources.json", "categories.json", "preferences.json", "manga.ndjson", "chapters.ndjson", "library.ndjson", "history.ndjson", "bookmarks.ndjson", "tracking.ndjson"] },
+          "schemaVersion": { "const": 1 },
+          "recordCount": { "type": "integer", "minimum": 0 },
+          "byteLength": { "type": "integer", "minimum": 0 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+          "optional": { "const": false }
+        }
+      }
+    },
+    "omissions": { "type": "object", "additionalProperties": { "type": "integer", "minimum": 0 } }
+  }
+}

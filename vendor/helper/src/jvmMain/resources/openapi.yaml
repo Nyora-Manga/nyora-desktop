@@ -1,0 +1,476 @@
+openapi: 3.1.0
+
+info:
+  title: Nyora Parser API
+  version: "1.0.0"
+  summary: Stateless content engine — sources, browse/search, manga details, chapter pages, image proxy.
+  description: |
+    The Nyora **Parser API** runs ~960 native
+    [kotatsu-parsers-redo](https://github.com/kotatsu-redo/kotatsu-parsers-redo)
+    sources in-process and exposes them over a small HTTP surface. It is
+    **stateless and unauthenticated** — pure content fetching.
+
+    Accounts and cross-device library sync are a **separate service**
+    (the Sync API), documented at the host's `/docs` for `stream.hasanraza.tech`.
+
+    > This is the content-only surface. Account and library-management endpoints
+    > exist only inside the desktop app's in-process helper — they act on local
+    > device state and are **not served on this public host**.
+
+    ---
+
+    ## Quickstart (read a chapter)
+    1. `GET /sources/catalog` → pick a `source.id` (e.g. `parser:MANGADEX`).
+    2. `GET /sources/popular?id=parser:MANGADEX&page=1` → `Manga[]`; take a `manga.url`.
+    3. `GET /manga/details?id=parser:MANGADEX&url={manga.url}` → `Manga` + `chapters[]`; take a `chapter.url`.
+    4. `GET /manga/pages?id=parser:MANGADEX&url={chapter.url}` → `pages[]`.
+    5. Render each `page.url` via `GET /image?u=…` (covers/pages must go through the proxy).
+
+    ## Conventions
+    - **Source IDs** are always `parser:<ENUM>` (e.g. `parser:MANGADEX`). Pass verbatim as `id`.
+    - **`url` fields are opaque, source-relative handles.** A `manga.url` is exactly what
+      `/manga/details` wants; a `chapter.url` is what `/manga/pages` wants. Don't parse or rewrite them.
+    - **Images go through `/image`** — source CDNs require a matching Referer/User-Agent
+      the proxy supplies; `coverUrl`/page URLs are already rewritten to point here.
+    - **Errors** are JSON: `{"error":"<message>"}`. Unknown paths return the service
+      banner with `200`, so check the response body, not just the status.
+
+    ## Rate limits & CORS
+    - **Rate limited per client IP** (token bucket, ~300 req/s, burst ~800). Exceeding
+      it returns `429` with a `Retry-After` header. All-source search fans a single
+      request out to every installed source, so it is proportionally heavier — prefer a
+      specific `id` where possible.
+    - **CORS** is restricted to `nyora.xyz` and its subdomains: matching browser origins
+      get them reflected in `Access-Control-Allow-Origin`, others get no CORS header.
+      Non-browser clients (native apps) send no `Origin` and are unaffected.
+
+  contact:
+    name: Nyora
+    url: https://nyora.xyz
+  license:
+    name: Proprietary
+
+servers:
+  - url: "/"
+    description: This host (the helper serving these docs).
+
+tags:
+  - name: System
+    description: Health and liveness.
+  - name: Sources
+    description: Discover sources and their filter schemas.
+  - name: Browse
+    description: Popular / latest / search listings within one source.
+  - name: Manga
+    description: Manga details, chapter lists, and chapter pages.
+  - name: Search
+    description: Cross-source global search.
+  - name: Images
+    description: Image proxy for covers and pages.
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      operationId: health
+      summary: Liveness probe
+      responses:
+        "200":
+          description: Service is healthy.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+              example: { status: ok }
+
+  /sources/catalog:
+    get:
+      tags: [Sources]
+      operationId: listCatalog
+      summary: List all available sources
+      description: Full catalog of parser sources (~960). Use a returned `id` for browse/details/pages.
+      responses:
+        "200":
+          description: The source catalog.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CatalogResponse" }
+              example:
+                entries:
+                  - { id: "parser:MANGADEX", name: "MangaDex", lang: "en", engine: "Parser", contentType: "Manga", isBroken: false, isInstalled: true }
+                  - { id: "parser:WEEBCENTRAL", name: "Weeb Central", lang: "en", engine: "Parser", contentType: "Manga", isBroken: false, isInstalled: false }
+
+  /sources/filters:
+    get:
+      tags: [Sources]
+      operationId: getSourceFilters
+      summary: Get the filter schema for a source
+      description: |
+        Returns the filters a source supports. Encode chosen filters as a
+        URL-encoded JSON array in the `f` parameter of `/sources/search`.
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+      responses:
+        "200":
+          description: Filter descriptors.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FiltersResponse" }
+              example:
+                filters:
+                  - { name: "Genre", typeName: "select", values: ["Any", "Action", "Comedy", "Romance"] }
+                  - { name: "Completed only", typeName: "check", values: [] }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+
+  /sources/popular:
+    get:
+      tags: [Browse]
+      operationId: browsePopular
+      summary: Popular titles in a source
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200": { $ref: "#/components/responses/Browse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /sources/latest:
+    get:
+      tags: [Browse]
+      operationId: browseLatest
+      summary: Latest updates in a source
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+        - $ref: "#/components/parameters/Page"
+      responses:
+        "200": { $ref: "#/components/responses/Browse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /sources/search:
+    get:
+      tags: [Browse]
+      operationId: searchSource
+      summary: Search within one source
+      description: |
+        Full-text search inside a single source. Optionally constrain with `f` —
+        a URL-encoded JSON array of filter selections whose shape comes from
+        `/sources/filters`, e.g. `[{"name":"Genre","type":"select","selectedIndex":2}]`.
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+        - name: q
+          in: query
+          required: true
+          description: Search query.
+          schema: { type: string }
+          example: "berserk"
+        - $ref: "#/components/parameters/Page"
+        - name: f
+          in: query
+          required: false
+          description: URL-encoded JSON array of filter selections (see `/sources/filters`).
+          schema: { type: string }
+          example: '[{"name":"Genre","type":"select","selectedIndex":2}]'
+      responses:
+        "200": { $ref: "#/components/responses/Browse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /manga/details:
+    get:
+      tags: [Manga]
+      operationId: getMangaDetails
+      summary: Full manga details + chapter list
+      description: "`url` is the opaque `manga.url` from any browse/search result for the same source."
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+        - name: url
+          in: query
+          required: true
+          description: Opaque manga handle.
+          schema: { type: string }
+          example: "/title/a96676e5-8ae2-425e/komi-san"
+      responses:
+        "200":
+          description: Manga details with chapters.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DetailsResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /manga/pages:
+    get:
+      tags: [Manga]
+      operationId: getChapterPages
+      summary: Page image URLs for a chapter
+      description: |
+        `url` is the opaque `chapter.url` from `/manga/details`. Cached; pass
+        `refresh=1` to force a re-fetch. **Render each `page.url` through `/image`.**
+      parameters:
+        - $ref: "#/components/parameters/SourceId"
+        - name: url
+          in: query
+          required: true
+          description: Opaque chapter handle.
+          schema: { type: string }
+          example: "/chapter/9b8c1d2e"
+        - name: refresh
+          in: query
+          required: false
+          description: "`1`/`true` bypasses the page cache."
+          schema: { type: string, enum: ["1", "true"] }
+      responses:
+        "200":
+          description: Ordered page list.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PagesResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "500": { $ref: "#/components/responses/Error" }
+
+  /image:
+    get:
+      tags: [Images]
+      operationId: proxyImage
+      summary: Proxy a cover or page image
+      description: |
+        Fetches an upstream image with the correct Referer/User-Agent and streams
+        the bytes back. Only public `http(s)` targets are allowed — private,
+        loopback and link-local hosts are rejected with `400 Invalid image URL`.
+        Successful responses are cached long-lived and immutable (the `u` URL is
+        content-addressed); error responses are not cached. CORS follows the same
+        `nyora.xyz` allowlist as the rest of the API.
+      parameters:
+        - name: u
+          in: query
+          required: true
+          description: Upstream image URL (URL-encoded).
+          schema: { type: string, format: uri }
+          example: "https://uploads.mangadex.org/covers/abc/def.jpg"
+        - name: h
+          in: query
+          required: false
+          description: "Optional extra request header `Name:Value`, repeatable. Usually unnecessary."
+          schema: { type: string }
+      responses:
+        "200":
+          description: The image bytes.
+          content:
+            image/jpeg: { schema: { type: string, format: binary } }
+            image/png: { schema: { type: string, format: binary } }
+            image/webp: { schema: { type: string, format: binary } }
+        "400": { $ref: "#/components/responses/Error" }
+        "502":
+          description: Upstream fetch failed.
+          content:
+            application/json: { schema: { $ref: "#/components/schemas/Error" } }
+
+  /search/global:
+    get:
+      tags: [Search]
+      operationId: globalSearch
+      summary: Search across all installed sources
+      description: |
+        Fans out the query to every installed source concurrently and returns
+        grouped results. A group may carry a per-source `error` (that source
+        failed/timed out) while others still return. Each source is capped at 15s.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query.
+          schema: { type: string }
+          example: "one piece"
+        - name: limit
+          in: query
+          required: false
+          description: Max results per source (default 6).
+          schema: { type: integer, default: 6, minimum: 1 }
+      responses:
+        "200":
+          description: Grouped cross-source results.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GlobalSearchResponse" }
+        "400": { $ref: "#/components/responses/Error" }
+
+components:
+  parameters:
+    SourceId:
+      name: id
+      in: query
+      required: true
+      description: Source identifier, always `parser:<ENUM>`.
+      schema: { type: string }
+      example: "parser:MANGADEX"
+    Page:
+      name: page
+      in: query
+      required: false
+      description: 1-based page number (default 1).
+      schema: { type: integer, default: 1, minimum: 1 }
+
+  responses:
+    Browse:
+      description: A page of manga entries.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/BrowseResponse" }
+    Error:
+      description: Error.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+          example: { error: "Unknown source: parser:NOPE" }
+
+  schemas:
+    Health:
+      type: object
+      properties: { status: { type: string, example: ok } }
+      required: [status]
+
+    Error:
+      type: object
+      properties: { error: { type: string } }
+      required: [error]
+
+    CatalogEntry:
+      type: object
+      properties:
+        id: { type: string, example: "parser:MANGADEX" }
+        name: { type: string, example: "MangaDex" }
+        lang: { type: string, example: "en" }
+        engine: { type: string, enum: [Dart, JavaScript, Parser], example: "Parser" }
+        contentType:
+          type: string
+          enum: [Manga, Manhwa, Manhua, Hentai, Comics, Novel, OneShot, Doujinshi, ImageSet, ArtistCg, GameCg, Other]
+          example: "Manga"
+        isBroken: { type: boolean }
+        isInstalled: { type: boolean }
+      required: [id, name, lang, engine, contentType, isBroken, isInstalled]
+
+    CatalogResponse:
+      type: object
+      properties:
+        entries: { type: array, items: { $ref: "#/components/schemas/CatalogEntry" } }
+      required: [entries]
+
+    MangaSourceRef:
+      type: object
+      description: |
+        Polymorphic source reference attached to a `Manga`. `type` is the
+        kotlinx-serialization discriminator; for parser sources it is
+        `{"type":"...MangaSourceRef.Parser","name":"MANGADEX"}`.
+      properties:
+        type: { type: string }
+        name: { type: string, example: "MANGADEX" }
+      required: [type, name]
+
+    MangaTag:
+      type: object
+      properties:
+        key: { type: string }
+        title: { type: string }
+      required: [key, title]
+
+    MangaPage:
+      type: object
+      properties:
+        url: { type: string, description: "Page image URL — already rewritten to point at /image." }
+        headers: { type: object, additionalProperties: { type: string } }
+      required: [url]
+
+    MangaChapter:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        number: { type: number, format: float, example: 12.0 }
+        volume: { type: integer, example: 2 }
+        url: { type: string, description: "Opaque chapter handle — pass to /manga/pages." }
+        scanlator: { type: string, nullable: true }
+        uploadDate: { type: integer, format: int64, description: "Epoch milliseconds (0 if unknown)." }
+        branch: { type: string, nullable: true }
+        pages: { type: array, items: { $ref: "#/components/schemas/MangaPage" } }
+        index: { type: integer }
+      required: [id, title]
+
+    Manga:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        altTitles: { type: array, items: { type: string } }
+        url: { type: string, description: "Opaque manga handle — pass to /manga/details." }
+        publicUrl: { type: string }
+        rating: { type: number, format: float, description: "0..1, or -1 if unknown.", example: 0.86 }
+        isNsfw: { type: boolean }
+        contentRating: { type: string, enum: [SAFE, SUGGESTIVE, ADULT], nullable: true }
+        coverUrl: { type: string, description: "Cover image — already rewritten to point at /image." }
+        largeCoverUrl: { type: string, nullable: true }
+        state: { type: string, enum: [ONGOING, FINISHED, ABANDONED, PAUSED, UPCOMING, RESTRICTED], nullable: true }
+        authors: { type: array, items: { type: string } }
+        source: { $ref: "#/components/schemas/MangaSourceRef" }
+        description: { type: string }
+        tags: { type: array, items: { $ref: "#/components/schemas/MangaTag" } }
+        chapters: { type: array, items: { $ref: "#/components/schemas/MangaChapter" } }
+        unread: { type: integer }
+        progress: { type: number, format: float, description: "0..1 reading progress." }
+      required: [id, title]
+
+    BrowseResponse:
+      type: object
+      properties:
+        entries: { type: array, items: { $ref: "#/components/schemas/Manga" } }
+        hasNextPage: { type: boolean }
+      required: [entries, hasNextPage]
+
+    DetailsResponse:
+      type: object
+      properties:
+        manga: { $ref: "#/components/schemas/Manga" }
+        chapters: { type: array, items: { $ref: "#/components/schemas/MangaChapter" } }
+      required: [manga, chapters]
+
+    PagesResponse:
+      type: object
+      properties:
+        pages: { type: array, items: { $ref: "#/components/schemas/MangaPage" } }
+      required: [pages]
+
+    FilterDescriptor:
+      type: object
+      properties:
+        name: { type: string }
+        typeName: { type: string, enum: [text, select, check], example: "select" }
+        values: { type: array, items: { type: string }, description: "Allowed values for select; empty for text/check." }
+      required: [name, typeName, values]
+
+    FiltersResponse:
+      type: object
+      properties:
+        filters: { type: array, items: { $ref: "#/components/schemas/FilterDescriptor" } }
+      required: [filters]
+
+    GlobalSearchGroup:
+      type: object
+      properties:
+        sourceId: { type: string, example: "parser:MANGADEX" }
+        sourceName: { type: string, example: "MangaDex" }
+        entries: { type: array, items: { $ref: "#/components/schemas/Manga" } }
+        error: { type: string, nullable: true, description: "Non-null if this source failed/timed out." }
+      required: [sourceId, sourceName, entries]
+
+    GlobalSearchResponse:
+      type: object
+      properties:
+        query: { type: string }
+        groups: { type: array, items: { $ref: "#/components/schemas/GlobalSearchGroup" } }
+      required: [query, groups]
