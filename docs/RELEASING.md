@@ -27,3 +27,5 @@ The macOS ARM64 Java build uses the pinned verified archive already exercised lo
 ## Signing and updates
 
 Initial installers are unsigned and macOS builds are not notarized. Installation instructions state this explicitly. No unsigned silent updater is enabled. Adding signing requires platform certificates/secrets and another native validation run; a missing certificate never becomes a false signing claim.
+
+Linux CI runs inside a disposable D-Bus/Xvfb session with an unlocked GNOME Keyring, so account persistence tests exercise real OS encryption. It does not allow Electron's plaintext storage fallback. See [Electron safeStorage](https://www.electronjs.org/docs/latest/api/safe-storage) and [GNOME Keyring startup](https://wiki.gnome.org/Projects/GnomeKeyring/RunningDaemon).

@@ -56,7 +56,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libnss3 libatk-bridge2.0-0 libgtk-3-0 libgbm1 libasound2t64 libfuse2
+          sudo apt-get install -y xvfb libnss3 libatk-bridge2.0-0 libgtk-3-0 libgbm1 libasound2t64 libfuse2 dbus-x11 gnome-keyring libsecret-1-0
       - run: npm ci
       - run: npx playwright install chromium
       - name: Assign release version
@@ -72,7 +72,7 @@ jobs:
           TARGET_ARCH: ${{ matrix.arch }}
         run: |
           if [ "$RUNNER_OS" = Linux ]; then
-            xvfb-run -a node scripts/package-electron.mjs "--$TARGET_PLATFORM" "--$TARGET_ARCH"
+            dbus-run-session -- xvfb-run -a bash scripts/ci-linux-package.sh
           else
             node scripts/package-electron.mjs "--$TARGET_PLATFORM" "--$TARGET_ARCH"
           fi
