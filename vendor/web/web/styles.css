@@ -1,0 +1,4234 @@
+/*
+ * Nyora Web — design system (v2).
+ *
+ * Modern flat + linear-gradient. The accent is picked from the browser's own
+ * AccentColor by default (store.js reads it into --accent at boot; user can
+ * override in Settings). Gradient companions are derived from --accent via
+ * color-mix so the whole UI re-tints to any accent.
+ *
+ * Theming contract (core/store.js): <html>/<body> carry data-theme =
+ * "DARK" | "LIGHT" and an inline --accent. Everything else derives.
+ */
+
+/* ---- tokens ---------------------------------------------------------- */
+:root,
+:root[data-theme="DARK"] {
+  /* Type system — Material 3 Expressive pairing (Google Fonts): Plus Jakarta
+     Sans for headlines, Inter for everything else. System fallbacks keep the UI
+     usable before the webfonts land / when offline. */
+  --font-display: "Plus Jakarta Sans", "Inter", -apple-system, system-ui, "Segoe UI", sans-serif;
+  --font-body: "Inter", -apple-system, system-ui, "Segoe UI Variable", "Segoe UI", Roboto, sans-serif;
+  /* Cosmic-midnight palette mirrored from nyora-android (values-night):
+     background #060810, surfaces are subtly indigo-tinted so the mobile-web
+     reads like the android app rather than a flat neutral AMOLED shell. */
+  /* Monochrome base — true neutral greys, zero hue. The ONLY colour in the UI
+     is --accent (the user's chosen scheme colour), applied deliberately. */
+  /* AMOLED: pure-black base — bg, chrome and card surfaces are all #000 (pixels
+     off on OLED), separated by --border/--hairline. Only hover/active lift to a
+     barely-there near-black so interaction still registers. */
+  --bg: #000000;                /* pure black */
+  --bg-elev: #000000;          /* raised chrome (topbar, sidebar) — also black */
+  --surface1: #000000;          /* cards / panes / rows */
+  --surface2: #0c0c0d;          /* hover (minimal lift) */
+  --surface3: #161618;          /* active / inset */
+  --surface-grad: #000000;   /* flat */
+  /* segmented control: recessed track + raised active pill (theme-adaptive so
+     inactive labels never sit dark-on-dark / light-on-light). */
+  --seg-track: rgba(255, 255, 255, 0.06);   /* subtle lift, visible on black */
+  --seg-active: #1d1d21;                      /* raised pill base */
+  --border: rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.20);
+  --text: #f5f5f6;
+  --text-dim: #a1a1a6;
+  --text-faint: #6c6c72;
+  --accent: #6366f1;            /* default; overridden by chosen scheme / AccentColor */
+  --accent-soft: color-mix(in oklab, var(--accent) 16%, transparent);
+  /* second accent stop = a deeper shade of the SAME hue (no second colour) */
+  --accent-2: color-mix(in oklab, var(--accent) 82%, #000000);
+  --on-accent: #ffffff;
+  /* Flat design: interactive accent fills are SOLID (no gradient). The
+     linear-gradient lives only as a faint background tint (see body). */
+  --grad-accent: var(--accent);
+  --grad-accent-soft: linear-gradient(135deg,
+      color-mix(in oklab, var(--accent) 22%, transparent) 0%,
+      color-mix(in oklab, var(--accent-2) 18%, transparent) 100%);
+  --grad-sheen: transparent;   /* flat — mono sheen removed */
+  /* Pure-black background with a faint accent wash up top — a clean linear
+     gradient straight onto #000 (srgb), NOT the muddy oklab-on-transparent mix
+     that washed the whole app grey. Bottom stays absolute black. */
+  --bg-tint:
+    linear-gradient(168deg,
+      color-mix(in srgb, var(--accent) 9%, #000000) 0%,
+      #000000 44%,
+      #000000 100%);
+  --danger: #ff5a65;
+  --ok: #34d399;
+  --warn: #fbbf24;
+
+  /* ---- semantic layer tokens (overlays, scrims, hairlines) ---- */
+  /* Transparent-black scrims for modals / drawers / search panels. */
+  --overlay: rgba(0, 0, 0, 0.58);
+  --overlay-strong: rgba(0, 0, 0, 0.62);
+  --overlay-light: rgba(0, 0, 0, 0.38);
+  /* Black wash stops used inside cover/image gradients. */
+  --scrim-faint: rgba(0, 0, 0, 0.05);
+  --scrim-soft: rgba(0, 0, 0, 0.04);
+  --scrim-deep: rgba(0, 0, 0, 0.66);
+  --scrim-deeper: rgba(0, 0, 0, 0.68);
+  /* Hairlines / sheens — neutral white, no hue. */
+  --hairline: rgba(255, 255, 255, 0.08);
+  --hairline-sheen: rgba(255, 255, 255, 0.05);
+  --hairline-faint: rgba(255, 255, 255, 0.02);
+  --card-border: rgba(255, 255, 255, 0.10);
+  --card-border-hover: rgba(255, 255, 255, 0.20);
+  /* Text over arbitrary surfaces (semi-transparent white). */
+  --text-on-surface-muted: rgba(255, 255, 255, 0.6);
+  /* Pure-contrast literals for the rare extreme-contrast need. */
+  --pure-white: #ffffff;
+  --pure-black: #000000;
+  /* A near-black ink used by card / surface bases. */
+  --surface-ink: #000000;
+  --cover-ink-top: #1b1d18;
+  --cover-ink-bottom: #050505;
+
+  /* Skeleton shimmer (accent-tinted sweep). */
+  --skeleton-shimmer: color-mix(in oklab, var(--accent) 8%, var(--surface2));
+
+  /* ---- accent-derived utility tints ---- */
+  --accent-tint-xs: color-mix(in srgb, var(--accent) 8%, transparent);
+  --accent-tint-soft: color-mix(in srgb, var(--accent) 12%, transparent);
+  --accent-tint: color-mix(in srgb, var(--accent) 18%, transparent);
+  --accent-tint-strong: color-mix(in srgb, var(--accent) 24%, transparent);
+  --accent-glow: color-mix(in oklab, var(--accent) 30%, transparent);
+  --accent-on-light: color-mix(in srgb, var(--accent) 90%, var(--pure-white));
+
+  /* ---- shadows (elevation scale) ---- */
+  --radius: 16px;
+  --radius-sm: 11px;
+  --radius-lg: 22px;
+  --radius-pill: 999px;
+  --shadow: 0 12px 44px rgba(0, 0, 0, 0.55);
+  --shadow-sm: 0 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-accent: none;
+  --shadow-card: 0 14px 34px rgba(0, 0, 0, 0.22);
+  --shadow-card-hover: 0 22px 48px rgba(0, 0, 0, 0.28);
+  --shadow-cover: 0 14px 32px rgba(0, 0, 0, 0.3);
+  --shadow-cover-hover: 0 22px 46px rgba(0, 0, 0, 0.38);
+  --shadow-pop: 0 30px 80px rgba(0, 0, 0, 0.5);
+  /* mobile depth shadows (deep blacks over artwork-heavy surfaces) */
+  --shadow-depth-1: 0 8px 20px rgba(0, 0, 0, 0.32);
+  --shadow-depth-2: 0 18px 36px rgba(0, 0, 0, 0.26);
+  --shadow-depth-3: 0 18px 40px rgba(0, 0, 0, 0.38);
+  --shadow-depth-4: 0 16px 34px rgba(0, 0, 0, 0.36);
+  --shadow-depth-5: 0 22px 58px rgba(0, 0, 0, 0.42);
+  --shadow-depth-6: 0 20px 50px rgba(0, 0, 0, 0.46);
+  --shadow-depth-7: 0 20px 52px rgba(0, 0, 0, 0.46);
+  --shadow-depth-8: 0 20px 48px rgba(0, 0, 0, 0.42);
+  --shadow-depth-9: 0 20px 48px rgba(0, 0, 0, 0.5);
+  --shadow-depth-10: 0 16px 34px rgba(0, 0, 0, 0.42);
+  --shadow-depth-11: 0 22px 58px rgba(0, 0, 0, 0.42);
+  --shadow-depth-12: 0 16px 34px rgba(0, 0, 0, 0.36);
+  --shadow-depth-13: 0 18px 42px rgba(0, 0, 0, 0.38);
+
+  /* (legacy warm-cream / route-ink mobile palette removed — the mobile UI now
+     inherits the neutral base tokens above and is hairline-driven.) */
+
+  --sidebar-w: 244px;
+  --topbar-h: 74px;
+  --mobile-tabbar-h: 82px;
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---- welcome / start screen (monochrome; accent applied deliberately) ---- */
+  --wlc-text: #f4f4f6;
+  --wlc-sky-1: #161617;
+  --wlc-sky-2: #0d0d0e;
+  --wlc-sky-3: #050506;
+  --wlc-blue: var(--accent);   /* the single accent — rain/flash pick it up */
+  --wlc-mist-1: rgba(255, 255, 255, 0.05);
+  --wlc-mist-2: rgba(255, 255, 255, 0.035);
+  --wlc-drop: rgba(255, 255, 255, 0.62);
+  --wlc-flash: rgba(255, 255, 255, 0.42);
+  --wlc-vignette: rgba(0, 0, 0, 0.62);
+  --wlc-wordmark: #e9e9ec;
+  --wlc-eyebrow: #9a9aa0;
+  --wlc-title: #fafafb;
+  --wlc-title-shadow: rgba(0, 0, 0, 0.5);
+  --wlc-sub: #b0b0b6;
+  --wlc-feature: #9a9aa0;
+  --wlc-card-top: rgba(26, 26, 28, 0.94);
+  --wlc-card-bottom: rgba(16, 16, 18, 0.92);
+  --wlc-card-border: rgba(255, 255, 255, 0.12);
+  --wlc-card-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  --wlc-card-inner: rgba(255, 255, 255, 0.06);
+  --wlc-head: #8c8c92;
+  --wlc-google-bg: #ffffff;
+  --wlc-google-text: #1a1a1c;
+  --wlc-google-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+  --wlc-google-shadow-hover: 0 16px 42px rgba(0, 0, 0, 0.5);
+  --wlc-google-spin-track: rgba(0, 0, 0, 0.25);
+  --wlc-or: #7c7c82;
+  --wlc-ghost-border: rgba(255, 255, 255, 0.14);
+  --wlc-ghost-border-hover: rgba(255, 255, 255, 0.26);
+  --wlc-ghost-bg: rgba(255, 255, 255, 0.03);
+  --wlc-ghost-bg-hover: rgba(255, 255, 255, 0.08);
+  --wlc-ghost-text: #ededf0;
+  --wlc-status-error: var(--danger);
+  --wlc-status-info: color-mix(in srgb, var(--accent) 85%, #ffffff);
+  --wlc-foot: #6f6f76;
+  --wlc-feature-card-border: rgba(255, 255, 255, 0.10);
+  --wlc-feature-card-bg: rgba(255, 255, 255, 0.04);
+}
+
+:root[data-theme="LIGHT"] {
+  /* Monochrome light — neutral greys, zero hue; --accent is the only colour. */
+  --bg: #f6f6f7;
+  --bg-elev: #fbfbfc;
+  --surface1: #ffffff;
+  --surface2: #ededee;
+  --surface3: #dddde0;
+  --surface-grad: #ffffff;   /* flat (was a mono gradient) */
+  --seg-track: rgba(0, 0, 0, 0.06);   /* light recessed track */
+  --seg-active: #ffffff;               /* raised white pill */
+  --border: rgba(0, 0, 0, 0.14);
+  --border-strong: rgba(0, 0, 0, 0.26);
+  --text: #0e0e10;
+  --text-dim: #52525a;
+  --text-faint: #8a8a90;
+  --on-accent: #ffffff;
+  --grad-sheen: transparent;   /* flat — mono sheen removed */
+  --bg-tint:
+    linear-gradient(160deg, color-mix(in oklab, var(--accent) 7%, transparent) 0%, transparent 40%);
+  --danger: #d92d2d;
+  --ok: #2f9e6f;
+  --overlay: rgba(0, 0, 0, 0.32);
+  --overlay-strong: rgba(0, 0, 0, 0.4);
+  --overlay-light: rgba(0, 0, 0, 0.18);
+  --hairline: rgba(0, 0, 0, 0.11);
+  --hairline-sheen: rgba(0, 0, 0, 0.05);
+  --hairline-faint: rgba(0, 0, 0, 0.03);
+  --card-border: rgba(0, 0, 0, 0.11);
+  --card-border-hover: rgba(0, 0, 0, 0.2);
+  --text-on-surface-muted: rgba(14, 14, 16, 0.6);
+  --skeleton-shimmer: color-mix(in oklab, var(--accent) 8%, var(--surface2));
+  --shadow: 0 14px 40px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 4px 14px rgba(0, 0, 0, 0.08);
+  --shadow-card: 0 14px 34px rgba(0, 0, 0, 0.1);
+  --shadow-card-hover: 0 22px 48px rgba(0, 0, 0, 0.14);
+  --shadow-cover: 0 14px 32px rgba(0, 0, 0, 0.12);
+  --shadow-cover-hover: 0 22px 46px rgba(0, 0, 0, 0.16);
+  --shadow-pop: 0 30px 80px rgba(0, 0, 0, 0.2);
+  --btn-hover: #ebebed;
+}
+
+/* ---- reset ----------------------------------------------------------- */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; height: 100%; }
+body {
+  background: var(--bg-tint), var(--bg);
+  background-attachment: fixed;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: -0.006em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-optical-sizing: auto;
+  /* Inter tuned to harmonise with Plus Jakarta Sans: single-story a (cv11)
+     + open digits, so body and headings share a geometric-humanist voice. */
+  font-feature-settings: "cv11", "ss01", "tnum" 0;
+  display: flex;
+  min-height: 100vh;
+  overscroll-behavior-y: none;
+}
+
+h1, h2, h3, .brand, .page-title, .source-name, .hero-card h1 {
+  font-family: inherit !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  text-transform: none;
+}
+
+a { color: inherit; text-decoration: none; }
+img { display: block; max-width: 100%; }
+button, input, select, textarea { font-family: inherit; color: inherit; }
+
+/* Autofilled fields keep the Material surface they were given.
+ *
+ * When a value comes from the browser's saved entries (a repeated search query,
+ * a sync email) the UA paints its own background *over* ours — a hard-coded navy
+ * under `color-scheme: dark`, an equally hard-coded pale yellow in light — and no
+ * `background` declaration can beat it. An inset shadow the height of the field is
+ * the only thing that covers that layer, so every input opts into the surface it
+ * already uses via --autofill-surface (defaulting to the common one). Text and
+ * caret are re-stated too, or the UA leaves near-black glyphs on a dark surface.
+ *
+ * Kept as two blocks on purpose: :-webkit-autofill and the standard :autofill are
+ * not understood by the same engines, and grouping them would let the unknown one
+ * invalidate the whole selector list. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 100px var(--autofill-surface, var(--surface1)) inset;
+  box-shadow: 0 0 0 100px var(--autofill-surface, var(--surface1)) inset;
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+}
+input:autofill,
+textarea:autofill,
+select:autofill {
+  box-shadow: 0 0 0 100px var(--autofill-surface, var(--surface1)) inset;
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+}
+
+/* Display type — headlines & section heads carry the Plus Jakarta Sans face
+   with tightened tracking for that editorial, expressive feel. */
+h1, h2, h3,
+.page-title, .section-head, .section-head h2,
+.hero-card h1, .wlc-eyebrow, .brand span {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  font-optical-sizing: auto;
+  font-feature-settings: "ss01";
+}
+button { cursor: pointer; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 8px; border: 2px solid transparent; background-clip: content-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* The app sidebar + the details columns scroll on wheel/trackpad WITHOUT a
+   visible native scrollbar (they looked dated). Content still scrolls. */
+.sidebar,
+.d2-info,
+.d2-chapter-scroll { scrollbar-width: none; }
+.sidebar::-webkit-scrollbar,
+.d2-info::-webkit-scrollbar,
+.d2-chapter-scroll::-webkit-scrollbar { display: none; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+.hidden { display: none !important; }
+::selection { background: var(--accent-soft); }
+
+/* ---- layout: sidebar + main ----------------------------------------- */
+.sidebar {
+  width: var(--sidebar-w);
+  flex: 0 0 var(--sidebar-w);
+  height: 100vh;
+  position: sticky;
+  inset-block-start: 0;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 9%, transparent) 0%, transparent 42%),
+    var(--bg);
+  border-inline-end: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 14px;
+  gap: 1px;
+  overflow-y: auto;
+}
+.brand {
+  display: flex; align-items: center;
+  padding: 4px 12px 14px;
+  font-weight: 800; font-size: 14px;
+  letter-spacing: 0.34em; text-transform: uppercase;
+  color: var(--text); cursor: pointer;
+}
+.nav-group { display: flex; flex-direction: column; gap: 1px; }
+.nav-group.bottom { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); }
+/* M3 navigation drawer: section headers are quiet labels separated by inset
+   hairline dividers (no decorative ticks); items are full-pill rows with a
+   tonal active indicator. */
+.nav-label {
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.09em; font-weight: 700;
+  color: var(--text-faint);
+  padding: 14px 16px 8px;
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.brand + .nav-label { border-top: none; margin-top: 0; padding-top: 6px; }
+.nav-item {
+  position: relative;
+  display: flex; align-items: center; gap: 14px;
+  min-height: 44px;
+  padding: 9px 16px; margin: 2px 0;
+  border-radius: 999px;
+  color: var(--text-dim); cursor: pointer;
+  font-weight: 600; white-space: nowrap;
+  transition: background 0.16s var(--ease), color 0.16s var(--ease);
+}
+.nav-item:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--text);
+}
+.nav-item .icon {
+  width: 24px; height: 24px; flex: 0 0 24px;
+  display: grid; place-items: center; color: var(--text-dim);
+  background: none;
+  transition: color 0.16s var(--ease);
+}
+.nav-item .icon svg { width: 20px; height: 20px; }
+.nav-item:hover .icon { color: var(--text); }
+.nav-item.active {
+  color: var(--text);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.nav-item.active .icon { color: var(--accent); background: none; }
+.nav-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+.nav-item-community {
+  color: var(--text);
+  background: var(--accent-tint-soft);
+  border: 1px solid transparent;
+}
+.nav-item-community:hover { color: var(--text); background: var(--accent-tint); }
+.nav-item-community .icon:first-child { color: var(--accent); }
+.nav-item-community .icon:last-child { width: 15px; height: 15px; margin-inline-start: auto; color: var(--text-faint); }
+.nav-item-community .icon:last-child svg { width: 14px; height: 14px; }
+
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---- topbar ---------------------------------------------------------- */
+.topbar {
+  position: sticky; inset-block-start: 0; z-index: 20;
+  /* Fixed, uniform height on EVERY page — lock height so flex never shrinks it
+     to fit shorter per-page content (was rendering 55–74px across routes). */
+  height: var(--topbar-h);
+  min-height: var(--topbar-h);
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 24px;
+  /* Seamless with the page — no dark band behind the search.
+     NO backdrop blur. It used to carry saturate(150%) blur(16px) on the premise
+     that content scrolls beneath the sticky header, but on this layout it never
+     does: #view is the scroller (html/body are height:100%, .main is a flex
+     column, .view is overflow-y:auto), so the topbar is a sibling ABOVE the
+     scrolling box and the document itself does not scroll — measured true at
+     every width from 800px up. The filter was blurring nothing but the static
+     page background, while costing a full-width composited layer and a backdrop
+     readback for the life of the app. That is real money on integrated
+     graphics. If the shell ever moves back to document scrolling, this belongs
+     here again — under 760px, where the document DOES scroll, the mobile block
+     already gives the bar an opaque background instead. */
+  background: transparent;
+  border-bottom: 1px solid var(--hairline);
+}
+.topbar .spacer { flex: 1 1 auto; }
+.mobile-brand,
+.mobile-search-action { display: none; }
+.mobile-search-panel,
+.mobile-search-scrim { display: none; }
+
+/* "Official website" pill — always visible in the header, links to the marketing site. */
+/* Official website — Material 3 tonal button (matches the app's .btn): accent
+   tonal container, neutral label, accent icon, pill shape, state layer + ripple-y
+   press feedback. */
+.visit-site {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 16px; border-radius: 999px;
+  font-size: 13px; font-weight: 600; line-height: 1; text-decoration: none;
+  white-space: nowrap;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface1));
+  border: 1px solid transparent;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease), transform 0.12s var(--ease);
+}
+.community-site {
+  flex: 0 0 auto;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 15px; border-radius: 999px;
+  color: var(--text);
+  background: var(--accent-tint);
+  border: 1px solid transparent;
+  font-size: 13px; font-weight: 650; line-height: 1; white-space: nowrap;
+  box-shadow: none;
+  transition: background 0.15s var(--ease), transform 0.12s var(--ease);
+}
+.community-site svg { color: var(--accent); }
+.community-site:hover { background: var(--accent-tint-strong); }
+.community-site:active { transform: scale(0.97); }
+.community-site:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.visit-site svg { flex: 0 0 auto; color: var(--accent); }
+.visit-site:hover { background: color-mix(in srgb, var(--accent) 20%, var(--surface1)); border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.visit-site:active { transform: scale(0.97); }
+.visit-site:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (max-width: 760px) {
+  .community-site { display: none; }
+  .visit-site-label { display: none; }   /* icon-only on phones to save space */
+  .visit-site { width: 40px; padding: 0; justify-content: center; }
+}
+
+.search-form { flex: 1 1 440px; max-width: 560px; position: relative; display: flex; align-items: center; }
+/* Search bar hidden only on the manga detail page + reader (app.js toggles
+   body.hide-search per route, so it always reappears on other screens). */
+body.hide-search .search-form { display: none; }
+/* The whole topbar is hidden on the immersive screens (details + reader) on
+   MOBILE only — see the @media (max-width: 760px) block. Desktop keeps it. */
+.search-form .icon,
+.search-form .search-icon {
+  position: absolute; inset-inline-start: 15px; inset-block-start: 50%; transform: translateY(-50%);
+  width: 17px; height: 17px; color: var(--text-faint); pointer-events: none;
+}
+.search-form input {
+  width: 100%; height: 40px;
+  padding: 0 16px 0 40px;
+  background: var(--surface1); --autofill-surface: var(--surface1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  color: var(--text);
+  transition: border-color 0.16s var(--ease), background 0.16s var(--ease);
+}
+.search-form input::placeholder { color: var(--text-faint); }
+.search-form input:focus { border-color: var(--accent); background: var(--surface2); --autofill-surface: var(--surface2); outline: none; }
+.source-btn {
+  display: flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 16px;
+  background: var(--surface1); border: 1px solid var(--border);
+  border-radius: var(--radius-pill); cursor: pointer; color: var(--text);
+  max-width: 220px; font-weight: 550;
+  transition: border-color 0.16s var(--ease);
+}
+.source-btn:hover { border-color: var(--border-strong); }
+.source-btn .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ---- view / page scaffolding ---------------------------------------- */
+.view {
+  flex: 1 1 auto;
+  padding: 26px 28px 80px;
+  overflow-y: auto;
+}
+/* App-like: each route fades/rises in instead of a hard repaint. */
+@keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.view > * { animation: none; }
+@media (prefers-reduced-motion: reduce) { .view > * { animation: none; } }
+.page-title { font-size: 24px; font-weight: 760; letter-spacing: -0.025em; margin: 0 0 20px; }
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin: 30px 0 16px;
+}
+.section-header:first-child { margin-top: 0; }
+.section-header h2, .section-header .h2 { font-size: 17px; font-weight: 680; margin: 0; letter-spacing: -0.01em; }
+.section-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ---- card grid ------------------------------------------------------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--card-min, 158px), 1fr));
+  gap: 20px;
+}
+.grid.dense { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 14px; }
+/* Trailing marker a chunked grid observes to know when to build the next batch.
+   Needs a real box to intersect with, hence the 1px. */
+.grid-sentinel { height: 1px; }
+/* Minimal, cover-forward manga card — the artwork IS the card. No surface box,
+   no decorative blobs, no accent tint muddying the cover. Anime-grade hover:
+   the cover lifts and the art does a slow, subtle zoom (Ken Burns). */
+.card {
+  position: relative;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+.card .cover {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--cover-ink-bottom);   /* solid placeholder while the art loads */
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow-cover);
+  transition: transform 0.34s var(--ease), box-shadow 0.34s var(--ease), border-color 0.34s var(--ease);
+}
+.cover-fallback {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 34px;
+  color: var(--text-faint);
+  background: linear-gradient(160deg, var(--surface2), var(--surface1));
+}
+.card .cover img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.card:hover .cover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-cover-hover);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--card-border));
+}
+.card:hover .cover img { transform: none; }
+.card:active .cover { transform: translateY(-1px); transition-duration: 0.1s; }
+.card:focus-visible { outline: none; }
+.card:focus-visible .cover {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-cover);
+}
+.card .title {
+  padding: 0 1px;
+  font-size: 12.8px; font-weight: 600; color: var(--text-dim);
+  display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; line-height: 1.3;
+  letter-spacing: -0.005em;
+  transition: color 0.18s var(--ease);
+}
+.card:hover .title { color: var(--text); }
+@media (prefers-reduced-motion: reduce) {
+  .card .cover, .card .cover img, .card .title { transition: none; }
+  .card:hover .cover { transform: none; }
+  .card:hover .cover img { transform: none; }
+}
+.badge {
+  position: absolute; inset-block-start: 8px; inset-inline-start: 8px; z-index: 2;
+  font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em;
+  padding: 3px 7px; border-radius: 6px;
+  background: var(--overlay-strong); color: var(--pure-white); backdrop-filter: blur(6px);
+}
+.badge.nsfw { background: var(--danger); color: var(--pure-white); }
+
+/* ---- chips / tags ---------------------------------------------------- */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 550;
+  padding: 5px 12px; border-radius: var(--radius-pill);
+  background: var(--surface1); border: 1px solid var(--border); color: var(--text-dim);
+  white-space: nowrap; transition: all 0.15s var(--ease);
+}
+.chip[role="button"] { cursor: pointer; }
+.chip[role="button"]:hover { background: var(--surface2); color: var(--text); border-color: var(--border-strong); }
+.chip.active { background: var(--accent-tint); border-color: color-mix(in oklab, var(--accent) 42%, transparent); color: var(--accent-on-light); box-shadow: none; }
+.chip.active[role="button"]:hover { background: var(--accent-tint-strong); color: var(--accent-on-light); }
+.chip.nsfw { border-color: color-mix(in oklab, var(--danger) 50%, transparent); color: var(--danger); }
+.chip.status-running { color: var(--accent); border-color: color-mix(in oklab, var(--accent) 45%, transparent); }
+.chip.status-queued { color: var(--warn); border-color: color-mix(in oklab, var(--warn) 45%, transparent); }
+.chip.status-completed, .chip.status-done { color: var(--ok); border-color: color-mix(in oklab, var(--ok) 45%, transparent); }
+.chip.status-failed { color: var(--danger); border-color: color-mix(in oklab, var(--danger) 45%, transparent); }
+
+/* ---- buttons --------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 18px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface1); color: var(--text);
+  font-weight: 600; cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.btn .icon { width: 18px; height: 18px; color: inherit; }
+.btn .icon svg { color: inherit; stroke: currentColor; }
+
+/* Standard button hover */
+.btn:hover { background: var(--btn-hover, var(--surface2)); border-color: var(--accent); }
+
+/* Accent button: force high contrast and color persistence */
+.btn.btn-accent {
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  border: none !important;
+  box-shadow: var(--shadow-sm);
+}
+.btn.btn-accent .icon,
+.btn.btn-accent .icon svg {
+  color: var(--on-accent) !important;
+  stroke: var(--on-accent) !important;
+}
+.btn.btn-accent:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 4px 12px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+/* Ghost button */
+.btn.btn-ghost { background: transparent; border-color: transparent; }
+.btn.btn-ghost:hover { background: var(--surface1); border-color: var(--border-strong); }
+
+/* Danger button */
+.btn.btn-danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, transparent); background: transparent; }
+.btn.btn-danger:hover { background: var(--danger); color: var(--pure-white); border-color: transparent; }
+.btn.btn-danger:hover .icon { color: var(--pure-white); }
+.icon-btn { width: 40px; padding: 0; flex: 0 0 40px; }
+.btn-sm { height: 32px; padding: 0 12px; font-size: 12.5px; }
+.btn-sm.icon-btn { width: 32px; flex-basis: 32px; }
+
+/* ---- stepper (number +/-) — fixes the Downloads white-box bug -------- */
+.stepper { display: inline-flex; align-items: center; gap: 4px; background: var(--surface3); border-radius: var(--radius-pill); padding: 4px; }
+.stepper button {
+  width: 30px; height: 30px; flex: 0 0 30px; border: none; border-radius: 50%;
+  background: var(--surface1); color: var(--text); font-size: 18px; line-height: 1;
+  display: grid; place-items: center; transition: background 0.14s var(--ease);
+}
+.stepper button:hover:not(:disabled) { background: var(--accent); color: var(--on-accent); }
+.stepper button:disabled { opacity: 0.4; cursor: not-allowed; }
+.stepper .num { min-width: 32px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* ---- segmented control ---------------------------------------------- */
+/* Segmented control — an inset track with a RAISED active segment (iOS/Material
+   style), not a flat saturated-accent fill. The active pill sits above the track
+   with a soft shadow + a whisper of accent; brand colour stays on real CTAs. */
+.seg { display: inline-flex; background: var(--seg-track); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 3px; gap: 2px; }
+.seg button { border: none; background: transparent; color: var(--text-dim); padding: 7px 16px; border-radius: 9px; cursor: pointer; font-weight: 600; font-size: 13.5px; letter-spacing: -0.01em; transition: color 0.16s var(--ease), background 0.16s var(--ease); }
+.seg button:hover:not(.active) { color: var(--text); }
+.seg button.active { background: color-mix(in oklab, var(--accent) 13%, var(--seg-active)); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22), inset 0 0 0 1px color-mix(in oklab, var(--accent) 24%, transparent); }
+
+/* ---- tabs ------------------------------------------------------------ */
+.tabs { display: flex; gap: 7px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab {
+  padding: 8px 17px; border-radius: var(--radius-pill);
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-dim); cursor: pointer; font-weight: 600;
+  transition: all 0.15s var(--ease);
+}
+.tab:hover { color: var(--text); border-color: var(--border-strong); }
+.tab.active { background: var(--grad-accent); border-color: transparent; color: var(--on-accent); box-shadow: var(--shadow-accent); }
+.load-more { display: block; margin: 30px auto 0; }
+
+/* ---- explore two-pane ------------------------------------------------ */
+/* Desktop: persistent left source list + right browse pane. On mobile the
+   source pane is hidden and the SAME .source-list renders inside a bottom
+   sheet (see the mobile block). The browse body is a strict state machine so
+   it is never left blank. */
+.explore { display: grid; grid-template-columns: 312px 1fr; gap: 24px; align-items: start; }
+.source-pane {
+  position: sticky; top: 16px;
+  background: var(--surface-grad); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 16px; max-height: calc(100vh - var(--topbar-h) - 48px);
+  display: flex; flex-direction: column; gap: 12px; overflow: hidden;
+}
+.source-pane .section-header { margin: 0; }
+/* The source list (shared by desktop pane + mobile sheet): a filter field, a
+   Manage-extensions row, then a scrollable grouped body. */
+.source-list { display: flex; flex-direction: column; gap: 10px; min-height: 0; flex: 1 1 auto; }
+.src-search, .source-list .src-search {
+  width: 100%; height: 38px; padding: 0 14px; margin: 0; border-radius: var(--radius-pill);
+  background: var(--bg-elev); --autofill-surface: var(--bg-elev); border: 1px solid var(--border); color: var(--text); flex: 0 0 auto;
+}
+.src-search:focus { border-color: var(--accent); outline: none; }
+.src-filter-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.src-filter-bar .src-search { width: auto; flex: 1 1 160px; min-width: 0; }
+.src-filter-bar .lang-select { flex: 0 1 auto; min-width: 150px; }
+.source-list-body { overflow-y: auto; display: flex; flex-direction: column; gap: 3px; padding-inline-end: 2px; min-height: 0; }
+/* Source row: medallion | title+meta (truncates) | action — no overlap. */
+.source-row {
+  display: grid; grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center; gap: 11px; width: 100%; text-align: start;
+  padding: 9px 10px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-dim);
+  background: transparent; border: 1px solid transparent;
+  transition: background 0.14s var(--ease), border-color 0.14s var(--ease);
+}
+.source-row:hover { background: var(--surface2); color: var(--text); }
+.source-row.active { background: var(--accent-soft); color: var(--text); }
+.source-row .thumb {
+  width: 38px; height: 38px; flex: 0 0 38px; border-radius: 11px;
+  display: grid; place-items: center; font-weight: 800; font-size: 12px;
+  background: var(--surface3); color: var(--text-dim); border: 1px solid var(--border);
+}
+.source-row.active .thumb { background: var(--grad-accent); color: var(--on-accent); border-color: transparent; }
+.source-row .row-main { min-width: 0; }
+.source-row .row-main .name { font-weight: 650; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.source-row .row-main .sub { font-size: 11.5px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.source-row .row-actions { display: flex; gap: 4px; flex: 0 0 auto; align-items: center; }
+.source-row .row-actions .icon { color: var(--text-faint); }
+/* Manage-extensions entry point — accent-tinted so it reads as the CTA. */
+.source-row.manage-row { border: 1px solid var(--border); background: var(--surface1); margin-bottom: 2px; }
+.source-row.manage-row:hover { border-color: var(--accent); background: var(--accent-soft); }
+.source-row.manage-row .thumb.manage-thumb { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+.source-list .lang { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-faint); padding: 10px 4px 2px; font-weight: 700; }
+.browse-pane { min-width: 0; }
+
+/* ---- explore landing (android-style) --------------------------------- */
+/* A universal search field, a 2x2 quick-actions card, then a "Manga sources"
+   grid with a Catalog action. Tapping a source tile swaps into the browse view
+   (a plain .browse-pane) with a Back affordance in its header. */
+.explore-home { display: flex; flex-direction: column; gap: 22px; }
+.explore-home .discover-search { margin: 0; }
+
+.quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.quick-action {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 12px;
+  padding: 16px; min-height: 92px; text-align: start; cursor: pointer;
+  background: var(--surface-grad); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); color: var(--text);
+  transition: background 0.14s var(--ease), border-color 0.14s var(--ease), transform 0.14s var(--ease);
+}
+.quick-action:hover { border-color: var(--accent); background: var(--surface2); }
+.quick-action:active { transform: scale(0.98); }
+.quick-action .qa-icon {
+  width: 40px; height: 40px; flex: 0 0 40px; border-radius: 12px;
+  display: grid; place-items: center;
+  background: var(--accent-soft); color: var(--accent);
+}
+.quick-action .qa-icon .icon svg { width: 22px; height: 22px; }
+.quick-action .qa-label { font-weight: 650; font-size: 14.5px; }
+
+.explore-sources { display: flex; flex-direction: column; gap: 12px; }
+.explore-sources .section-header { margin: 0; }
+.source-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 12px;
+}
+.source-tile {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 8px 12px; text-align: center; cursor: pointer;
+  background: var(--surface-grad); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); color: var(--text);
+  transition: background 0.14s var(--ease), border-color 0.14s var(--ease), transform 0.14s var(--ease);
+}
+.source-tile:hover { border-color: var(--accent); background: var(--surface2); }
+.source-tile:active { transform: scale(0.97); }
+.source-tile.pinned { border-color: color-mix(in srgb, var(--accent) 42%, var(--border)); }
+/* pin toggle — hidden until hover/focus; always shown (accent) when pinned */
+.source-tile-pin {
+  position: absolute; inset-block-start: 6px; inset-inline-end: 6px; z-index: 2;
+  width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+  background: var(--surface3); border: 1px solid var(--border); color: var(--text-faint);
+  cursor: pointer; opacity: 0; transform: scale(0.9);
+  transition: opacity 0.14s var(--ease), transform 0.14s var(--ease), color 0.14s var(--ease), background 0.14s var(--ease), border-color 0.14s var(--ease);
+}
+.source-tile-pin svg { width: 14px; height: 14px; }
+.source-tile:hover .source-tile-pin,
+.source-tile:focus-within .source-tile-pin { opacity: 1; transform: none; }
+.source-tile-pin:hover { color: var(--accent); border-color: var(--accent); }
+/* pin is now an iconBtn() (.btn.btn-ghost); out-specify it to keep tile styling */
+.source-tile .source-tile-pin { background: var(--surface3); border: 1px solid var(--border); }
+.source-tile .source-tile-pin:hover { color: var(--accent); border-color: var(--accent); background: var(--surface3); }
+.source-tile-pin.active {
+  opacity: 1; transform: none;
+  background: var(--accent); color: var(--on-accent); border-color: transparent;
+}
+.source-tile-badge {
+  width: 52px; height: 52px; border-radius: 15px; display: grid; place-items: center;
+  font-weight: 800; font-size: 15px;
+  background: var(--surface3); color: var(--text-dim); border: 1px solid var(--border);
+}
+.source-tile-badge.pinned { background: var(--grad-accent); color: var(--on-accent); border-color: transparent; }
+.source-tile-name {
+  font-weight: 650; font-size: 13px; line-height: 1.25; width: 100%;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.source-tile-sub { font-size: 11px; color: var(--text-faint); }
+
+/* browse view reached from a source tile — Back button sits before the pill */
+.explore-browse .browse-head { align-items: center; }
+
+/* ---- extensions sheet ------------------------------------------------- */
+.ext-sheet { display: flex; flex-direction: column; gap: 14px; }
+.ext-search { margin: 0; flex: 0 0 auto; }
+.ext-toolbar { display: flex; gap: 8px; align-items: center; }
+.ext-toolbar .ext-search { flex: 1 1 auto; }
+.ext-toolbar .ext-lang { flex: 0 0 auto; max-width: 44%; }
+.ext-list { max-height: min(56vh, 520px); overflow-y: auto; }
+.ext-row { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 12px; }
+.ext-row .row-main { min-width: 0; }
+.ext-row .row-actions { display: flex; gap: 8px; align-items: center; flex: 0 0 auto; }
+.ext-row.broken { opacity: 0.6; }
+
+/* ---- details --------------------------------------------------------- */
+/* The hero is a single rounded surface holding a blurred cover backdrop, a
+   top-left overlay Back button, and a two-pane head (sticky summary left /
+   chapter list right) that collapses to one column on narrow screens. */
+.details { position: relative; }
+
+.details-hero {
+  position: relative; border-radius: var(--radius-lg); overflow: hidden;
+  background: var(--bg-elev);
+}
+.details-hero .hero-bg {
+  position: absolute; inset: 0; background-size: cover; background-position: center top;
+  filter: blur(40px) saturate(150%); transform: scale(1.25); opacity: 0.45; pointer-events: none;
+}
+.details-hero .hero-bg::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 45%, transparent), var(--bg-elev) 78%);
+}
+
+/* Top-left overlay back button. */
+.details-back, .details-backbar .icon-btn {
+  position: absolute; inset-block-start: 14px; inset-inline-start: 14px; z-index: 3;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  border: 1px solid var(--border-strong);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+.details-back:hover { background: color-mix(in srgb, var(--bg) 72%, transparent); }
+.details-backbar { position: relative; min-height: 56px; }
+
+/* Two-pane head. */
+.details-head {
+  position: relative; z-index: 2;
+  display: grid; grid-template-columns: 332px minmax(0, 1fr); gap: 36px;
+  padding: 28px 28px 28px 28px;
+  align-items: start;
+}
+
+/* Left summary column (sticky on desktop). */
+.details-summary {
+  position: sticky; inset-block-start: 16px; align-self: start;
+  display: flex; flex-direction: column; gap: 14px; min-width: 0;
+}
+.details-summary > .cover {
+  width: 100%; aspect-ratio: 2/3; border-radius: var(--radius); overflow: hidden;
+  border: 1px solid var(--border); background: var(--surface1); box-shadow: var(--shadow);
+  position: relative;
+}
+.details-summary > .cover img { width: 100%; height: 100%; object-fit: cover; }
+.details-title { font-size: 25px; line-height: 1.2; margin: 4px 0 0; letter-spacing: -0.025em; }
+.details-authors { color: var(--text-dim); font-size: 14px; margin: 0; }
+.details-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Action area — wraps, never overflows horizontally. */
+.details-actions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 4px 0 2px;
+}
+.details-actions .details-cta { flex: 1 1 140px; min-width: 0; }
+.details-actions .btn { min-width: 0; }
+.details-actions-icons { display: flex; gap: 8px; flex: 0 0 auto; }
+
+.tag-chips { margin-top: 2px; }
+
+.desc { color: var(--text-dim); line-height: 1.65; white-space: pre-line; margin: 4px 0 0; }
+.desc.clamp { display: -webkit-box; -webkit-line-clamp: 6; line-clamp: 6; -webkit-box-orient: vertical; overflow: hidden; }
+.desc-empty { color: var(--text-faint); font-style: italic; }
+.desc-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.desc-wrap .btn-sm { align-self: flex-start; padding-inline-start: 0; padding-inline-end: 0; }
+
+/* Right chapters column. */
+.details-chapters { min-width: 0; }
+.details-chapters > .section-header { margin-top: 0; }
+
+.chapter-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.chapter-list li {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 48px; padding: 0 12px; border-radius: var(--radius-sm); cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.14s var(--ease), border-color 0.14s var(--ease);
+}
+.chapter-list li:hover { background: var(--surface1); border-color: var(--border); }
+.chapter-list li.read { color: var(--text-faint); }
+.chapter-list li.read .ch-name { color: var(--text-faint); }
+.chapter-list .ch-name {
+  flex: 1 1 auto; min-width: 0; font-size: 14px; font-weight: 550; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.chapter-list .ch-meta { flex: 0 0 auto; color: var(--text-faint); font-size: 12px; white-space: nowrap; }
+.chapter-list li .icon-btn { 
+  flex: 0 0 40px; 
+  width: 40px; 
+  height: 40px; 
+  color: var(--text-dim);
+  transition: all 0.2s var(--ease);
+}
+.chapter-list li .icon-btn:hover {
+  color: var(--accent);
+  background: var(--surface2);
+}
+.chapter-list .skeleton-row { justify-content: space-between; pointer-events: none; }
+
+/* ===== details v2 — Tachiyomi-style two-pane (fixed info, scrolling chapters) === */
+body[data-route="details"] .main { height: 100dvh; min-height: 0; }
+body[data-route="details"] .view { overflow: hidden; padding: 0; min-height: 0; }
+body[data-route="details"] .view > .details { height: 100%; min-height: 0; }
+.d2-loading { position: relative; min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
+.d2-loading > .icon-btn { position: absolute; inset-block-start: 14px; inset-inline-start: 14px; }
+.d2-loading-badge { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.d2-loading-label { color: var(--text-dim); font-size: 13.5px; font-weight: 500; letter-spacing: 0.01em; }
+
+.d2 {
+  height: 100%; width: 100%; max-width: 1440px; margin-inline: auto;
+  min-height: 0; position: relative;
+  display: grid; grid-template-columns: 344px minmax(0, 1fr);
+}
+.d2-back {
+  position: absolute; inset-block-start: 14px; inset-inline-start: 14px; z-index: 5;
+  background: color-mix(in srgb, var(--bg) 60%, transparent);
+  border: 1px solid var(--border-strong);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+}
+
+.d2-info {
+  min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  padding: 30px 24px 40px; display: flex; flex-direction: column; gap: 16px;
+  border-inline-end: 1px solid var(--border);
+}
+.d2-head { display: flex; gap: 16px; }
+.d2-cover {
+  flex: 0 0 120px; width: 120px; aspect-ratio: 2 / 3; border-radius: var(--radius);
+  overflow: hidden; background: var(--surface1); border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm); position: relative;
+}
+.d2-cover img { width: 100%; height: 100%; object-fit: cover; }
+.d2-cover-fallback {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-family: var(--font-display); font-weight: 800; font-size: 40px;
+  color: var(--text-faint);
+  background: linear-gradient(160deg, var(--surface2), var(--surface1));
+}
+.d2-titlebox { min-width: 0; display: flex; flex-direction: column; gap: 8px; padding-block-start: 2px; }
+.d2-title {
+  font-size: 20px; line-height: 1.25; margin: 0; letter-spacing: -0.02em;
+  display: -webkit-box; -webkit-line-clamp: 4; line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;
+}
+.d2-authors { color: var(--text-dim); font-size: 13px; margin: 0; }
+.d2-meta { display: flex; flex-wrap: wrap; gap: 6px; }
+.d2-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.d2-actions .d2-cta { flex: 1 1 auto; min-width: 140px; }
+.d2-actions-sub { gap: 8px; }
+.d2-desc { color: var(--text-dim); line-height: 1.6; white-space: pre-line; margin: 0; font-size: 13.5px; }
+.d2-desc.clamp { display: -webkit-box; -webkit-line-clamp: 5; line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.d2-desc-empty { color: var(--text-faint); font-style: italic; }
+.d2-desc-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.d2-desc-wrap .btn-sm { padding-inline: 0; }
+.d2-genres { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.d2-chapters { min-height: 0; display: flex; flex-direction: column; }
+.d2-toolbar {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 20px 22px 12px; border-block-end: 1px solid var(--border);
+}
+.d2-toolbar-l { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.d2-toolbar-l h2 { margin: 0; font-size: 17px; }
+.d2-count { color: var(--text-faint); font-size: 12.5px; white-space: nowrap; }
+.d2-toolbar-r { display: flex; gap: 2px; }
+.d2-chapter-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 8px 14px 48px; }
+.d2-chapter-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+
+.d2-ch {
+  display: flex; align-items: center; gap: 8px; min-height: 54px;
+  padding: 6px 6px 6px 0; border-radius: var(--radius-sm); cursor: pointer;
+  transition: background 0.12s var(--ease);
+}
+.d2-ch:hover { background: var(--surface1); }
+.d2-ch-rail { flex: 0 0 3px; align-self: stretch; margin-block: 9px; border-radius: 3px; background: var(--accent); }
+.d2-ch.read .d2-ch-rail { background: transparent; }
+.d2-ch-main { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 3px; padding-inline-start: 6px; }
+.d2-ch-name { font-size: 14px; font-weight: 550; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.d2-ch.read .d2-ch-name { color: var(--text-faint); font-weight: 500; }
+.d2-ch-meta { font-size: 12px; color: var(--text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.d2-ch-progress { height: 3px; border-radius: 3px; background: var(--surface3); overflow: hidden; margin-block-start: 3px; max-width: 240px; }
+.d2-ch-progress span { display: block; height: 100%; background: var(--accent); }
+.d2-ch .icon-btn { flex: 0 0 34px; width: 34px; height: 34px; color: var(--text-faint); }
+.d2-ch .icon-btn:hover { color: var(--accent); background: var(--surface2); }
+.d2-ch .d2-dl.dl-done { color: var(--ok); }
+.d2-ch .d2-dl.dl-queued { color: var(--warn); }
+.d2-ch .d2-more { opacity: 0; }
+.d2-ch:hover .d2-more, .d2-ch:focus-within .d2-more { opacity: 1; }
+
+.row-menu {
+  position: fixed; z-index: 1200; min-width: 208px;
+  background: var(--surface1); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 6px;
+  display: flex; flex-direction: column; gap: 1px;
+}
+.row-menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: start;
+  padding: 9px 10px; border-radius: 8px; font-size: 13.5px; color: var(--text);
+  background: transparent; border: 0; cursor: pointer;
+}
+.row-menu-item:hover { background: var(--surface2); }
+.row-menu-item.danger { color: var(--danger); }
+.row-menu-item .icon { width: 16px; height: 16px; color: var(--text-dim); flex: 0 0 16px; }
+
+@media (max-width: 900px) {
+  body[data-route="details"] .main { height: auto; min-height: 100dvh; }
+  body[data-route="details"] .view { overflow-y: auto; display: block; }
+  .d2 { display: block; }
+  .d2-info { overflow: visible; border-inline-end: 0; border-block-end: 1px solid var(--border); padding-block-start: 56px; }
+  .d2-chapter-scroll { overflow: visible; padding-block-end: 24px; }
+}
+
+/* ---- library hub redesign ------------------------------------------- */
+.library-container-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.library-hub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.library-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.library-rail {
+  margin-bottom: 24px;
+}
+
+.library-subview {
+  min-height: 400px;
+}
+
+/* ---- discover home (android-style) ---------------------------------- */
+.discover { display: flex; flex-direction: column; gap: 22px; }
+.discover-body { display: flex; flex-direction: column; gap: 26px; }
+
+/* Persistent search bar — quiet rounded surface, leading glyph. */
+.discover-search {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 16px; height: 48px;
+  background: var(--surface1); --autofill-surface: var(--surface1); border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.discover-search .icon { color: var(--text-dim); flex: 0 0 auto; }
+.discover-search-input {
+  flex: 1 1 auto; min-width: 0; border: none; background: transparent;
+  color: var(--text); font-size: 15px; outline: none;
+}
+.discover-search-input::placeholder { color: var(--text-faint); }
+
+/* Hero card — blurred cover backdrop, real cover + title/genres/Read. */
+.discover-hero {
+  position: relative; overflow: hidden; cursor: pointer;
+  border-radius: var(--radius-lg); border: 1px solid var(--border);
+  background: var(--bg-elev); box-shadow: var(--shadow);
+}
+.discover-hero-bg {
+  position: absolute; inset: 0; background-size: cover; background-position: center;
+  filter: blur(40px) saturate(135%); transform: scale(1.3); opacity: 0.28; pointer-events: none;
+  /* Own layer. Without it the hover lift — which animates the PARENT's transform
+     and box-shadow — repaints this element too, and a 40px blur over the full
+     hero re-rasterized every frame drops a weak GPU to single digits. Promoted,
+     the blur is computed once and the hover is a pure composite. */
+  will-change: transform;
+}
+/* Fade the banner out toward the text: a left→right wash so it only faintly tints
+   behind the cover and reads as solid card behind the title, plus a top/bottom
+   darkening. Keeps a bright cover-as-banner (e.g. One Piece) from overpowering. */
+.discover-hero-bg::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--bg-elev) 85%, transparent) 55%, var(--bg-elev) 100%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg) 55%, transparent), var(--bg-elev) 88%);
+}
+.discover-hero-content {
+  position: relative; z-index: 1;
+  display: flex; gap: 20px; align-items: center; padding: 22px;
+}
+.discover-hero-cover {
+  flex: 0 0 auto; width: 128px; aspect-ratio: 2/3; border-radius: var(--radius);
+  overflow: hidden; background: var(--surface1); border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.discover-hero-cover img { width: 100%; height: 100%; object-fit: cover; }
+.discover-hero-info { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.discover-hero-eyebrow {
+  text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; font-weight: 600;
+  color: var(--accent);
+}
+.discover-hero-title { margin: 0; font-size: 26px; line-height: 1.15; letter-spacing: -0.02em; }
+.discover-hero-actions { display: flex; gap: 10px; margin-top: 4px; }
+/* Search focus + hero lift — interactive affordances. */
+.discover-search { transition: border-color 0.2s var(--ease); }
+.discover-search:focus-within { border-color: var(--accent); }
+.discover-hero { transition: transform 0.28s var(--ease), box-shadow 0.28s var(--ease); }
+.discover-hero:hover { transform: translateY(-2px); box-shadow: var(--shadow-card-hover); }
+.discover-hero:active { transform: translateY(-1px) scale(0.99); }
+/* Cover overlay chips — pinned to the bottom of a cover tile. */
+.cover-chips { position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 2; }
+
+/* Horizontal rails — snap-scrolling track of fixed-width cover cards.
+   content-visibility keeps the renderer off the rails that are scrolled out of
+   view: a screenful of covers is more layout+paint per frame than integrated
+   graphics can hold 60fps through, and only one or two rails are ever on
+   screen. The intrinsic size is a rail's real height, so the scrollbar stays
+   honest and `auto` remembers the measured value once it has been rendered. */
+.discover-rail {
+  display: flex; flex-direction: column; gap: 12px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 340px;
+}
+.discover-rail .section-header { margin: 0; }
+.discover-rail-track {
+  display: flex; gap: 14px; overflow-x: auto;
+  scroll-snap-type: x proximity;
+  /* overflow-x:auto also clips the vertical axis, which was slicing the card
+     drop-shadow into a hard "divider" line. Pad the scroll box so the accent
+     shadow (and hover lift) has room, then pull the box back with matching
+     negative margins so the cards stay put visually. */
+  padding: 14px 12px 26px;
+  margin: -14px -12px -14px;
+  /* Material carousel: no visible scrollbar — the peeking next card is the
+     scroll affordance. Overrides the app-wide thin scrollbar for this rail. */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.discover-rail-track::-webkit-scrollbar { height: 0; width: 0; display: none; }
+.discover-rail-card { flex: 0 0 138px; width: 138px; scroll-snap-align: start; }
+
+@media (max-width: 760px) {
+  .discover-hero-cover { width: 104px; }
+  .discover-hero-title { font-size: 21px; }
+  .discover-rail-card { flex-basis: 122px; width: 122px; }
+}
+
+/* ---- explore: browse body states ------------------------------------- */
+/* Search-mode input row in the browse pane. */
+.browse-searchbar { display: flex; gap: 10px; align-items: stretch; margin: 0 0 18px; }
+.browse-searchbar .browse-search { margin: 0; flex: 1 1 auto; }
+.browse-searchbar .icon-btn { flex: 0 0 auto; height: 42px; width: 42px; }
+/* No-source onboarding: centered CTA instead of a blank pane. */
+.browse-onboarding { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 24px 0; }
+.browse-body { min-height: 240px; }
+
+/* ---- details: tablet collapse --------------------------------------- */
+@media (max-width: 1040px) {
+  /* Single column: summary stacks above the chapter list, no longer sticky. */
+  .details-head { grid-template-columns: 1fr; gap: 24px; }
+  .details-summary { position: static; }
+  .details-summary > .cover { width: min(220px, 46vw); align-self: center; }
+  .details-title, .details-authors { text-align: center; }
+  .details-meta { justify-content: center; }
+}
+
+/* Reading hides the topbar + bottom tabbar, but keeps the LEFT sidebar on
+   desktop so navigation stays available. The in-reader "Hide sidebar" toggle
+   adds .reader-immersive to collapse it for distraction-free reading. */
+body.reader-active .topbar,
+body.reader-active .tabbar {
+  display: none !important;
+}
+body.reader-active.reader-immersive .sidebar,
+body.reader-active.reader-fullscreen .sidebar {
+  display: none !important;
+}
+
+body.reader-active .view {
+  padding: 0;
+}
+/* the sidebar toggle is only meaningful on desktop (mobile sidebar is a drawer) */
+@media (max-width: 760px) { .reader-sidebar-toggle { display: none !important; } }
+
+.reader-view {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.reader-view .reader {
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* ---- paged / paged-rtl reader — horizontal scroll-snap track ------------ */
+.reader-paged { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.reader-paged-track {
+  height: 100%;
+  display: flex;
+  overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+.reader-paged-track::-webkit-scrollbar { display: none; }
+.reader-slide {
+  flex: 0 0 100%; width: 100%; height: 100%;
+  scroll-snap-align: center; scroll-snap-stop: always;
+  display: flex; align-items: center; justify-content: center;
+}
+/* fit-height: whole page visible (contain). fit-width: fill width, tall pages
+   scroll vertically inside their own slide. */
+.reader-paged-track.fit-height .reader-slide img {
+  max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain;
+}
+/* fit-width: centre the page vertically when it fits; top-align + scroll when
+   it's taller than the viewport (safe center never clips the top). */
+.reader-paged-track.fit-width .reader-slide { align-items: safe center; overflow-y: auto; }
+.reader-paged-track.fit-width .reader-slide::-webkit-scrollbar { display: none; }
+.reader-paged-track.fit-width .reader-slide img { width: 100%; height: auto; max-width: 100%; }
+.reader-slide img { display: block; transition: transform 0.2s var(--ease); transform-origin: center; }
+/* Paged zoom (double-tap / pinch): only the zoomed slide transforms; disable the
+   snap-scroll, native slide-scroll and tap-zones while zoomed so pan owns gestures. */
+.reader-paged.panning .reader-slide img { transition: none; }
+.reader-paged.zoomed .reader-slide img { will-change: transform; cursor: grab; }
+.reader-paged.zoomed .reader-slide { overflow: hidden; }
+.reader-paged.zoomed .reader-paged-track { touch-action: none; }
+.reader-paged.zoomed .reader-zone { pointer-events: none; }
+/* Tap zones for page-turn — DESKTOP ONLY (touch uses native swipe). */
+.reader-zone { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .reader-zone {
+    display: block; position: absolute; top: 0; bottom: 0; width: 30%; z-index: 4; cursor: pointer;
+  }
+  .reader-zone.left { left: 0; } .reader-zone.right { right: 0; }
+}
+
+/* ---- reader loading state — page-shaped shimmer + accent spinner -------- */
+.reader-loading-screen { height: 100dvh; display: flex; flex-direction: column; }
+.reader-loading {
+  position: relative; flex: 1; min-height: 0;
+  display: grid; place-items: center; padding: 22px;
+}
+.reader-loading-badge {
+  grid-area: 1 / 1; z-index: 1;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.reader-loading-ring {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 2.5px solid var(--hairline);
+  border-top-color: var(--accent);
+  animation: reader-spin 0.8s linear infinite;
+}
+.reader-loading-label { color: var(--text-dim); font-size: 13.5px; font-weight: 500; letter-spacing: 0.01em; }
+@keyframes reader-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .reader-loading-ring { animation-duration: 1.6s; } }
+
+.reader-view.controls-hidden .reader-bar,
+.reader-view.controls-hidden .reader-progress {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+/* Material motion: bars glide off toward their edge as they hide. */
+.reader-view.controls-hidden .reader-bar.top { transform: translateY(-12px); }
+.reader-view.controls-hidden .reader-bar.bottom { transform: translateY(12px); }
+
+.reader-bar, .reader-progress {
+  transition: opacity 0.25s var(--ease), visibility 0.25s, transform 0.25s var(--ease);
+}
+@media (prefers-reduced-motion: reduce) {
+  .reader-view.controls-hidden .reader-bar.top,
+  .reader-view.controls-hidden .reader-bar.bottom { transform: none; }
+}
+
+/* thin chapter-position bar pinned to the very top */
+.reader-progress {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  height: 3px;
+  border-radius: 0 999px 999px 0;
+  background: var(--accent);
+  z-index: 22;
+  box-shadow: 0 0 10px color-mix(in oklab, var(--accent) 50%, transparent);
+}
+
+/* Material 3 chrome: floating tonal pills detached from the edges (the
+   Mihon-reader idiom), hovering over the artwork on a blurred surface. */
+.reader-view .reader-bar {
+  position: absolute;
+  inset-inline-start: 12px;
+  inset-inline-end: 12px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 26px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-elev) 84%, transparent);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow:
+    0 2px 6px color-mix(in srgb, #000 22%, transparent),
+    0 12px 32px color-mix(in srgb, #000 26%, transparent);
+}
+/* Top bar = TWO detached clusters (title pill / actions pill) with the page
+   visible between them; the bar element itself is an invisible layout row. */
+.reader-view .reader-bar.top {
+  inset-block-start: max(10px, env(safe-area-inset-top));
+  justify-content: space-between;
+  padding: 0;
+  border: none;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  pointer-events: none;
+}
+.reader-bar .reader-title-group,
+.reader-bar.top .reader-actions {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 26px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-elev) 84%, transparent);
+  backdrop-filter: blur(20px) saturate(1.6);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6);
+  box-shadow:
+    0 2px 6px color-mix(in srgb, #000 22%, transparent),
+    0 12px 32px color-mix(in srgb, #000 26%, transparent);
+}
+.reader-bar .reader-title-group {
+  min-width: 0;
+  padding-inline-end: 18px;
+}
+@media (max-width: 760px) {
+  .reader-bar.top .reader-actions { gap: 2px; }
+  .reader-bar.top .reader-btn { width: 40px; height: 40px; }
+}
+.reader-view .reader-bar.bottom {
+  inset-block-end: max(10px, env(safe-area-inset-bottom));
+  inset-inline-start: 50%;
+  transform: translateX(-50%);
+  inset-inline-end: auto;
+  width: min(460px, calc(100% - 32px));
+}
+.reader-view.controls-hidden .reader-bar.bottom { transform: translateX(-50%) translateY(12px); }
+@media (prefers-reduced-motion: reduce) {
+  .reader-view.controls-hidden .reader-bar.bottom { transform: translateX(-50%); }
+}
+
+/* End-of-chapter tail card (webtoon), also the auto-scroll landing spot. */
+.reader-end {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  width: min(420px, calc(100% - 32px));
+  margin: 28px auto calc(96px + env(safe-area-inset-bottom));
+  padding: 32px 24px;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: var(--surface1);
+  text-align: center;
+}
+.reader-end-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+.reader-end-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.reader-end-last {
+  font-size: 13px;
+  color: var(--text-faint);
+  align-self: center;
+}
+
+/* top bar pieces */
+.reader-bar .reader-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.3;
+}
+.reader-bar .reader-title .t-manga {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reader-bar .reader-title .t-chapter {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.reader-bar .reader-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 0 0 auto;
+}
+
+/* Material icon buttons: circular, borderless on the pill surface; hover is
+   an accent-tonal wash, selected is a filled accent circle. */
+.reader-bar .reader-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.reader-bar .reader-btn .icon { width: 24px; height: 24px; }
+.reader-bar .reader-btn .icon svg { width: 24px; height: 24px; }
+.reader-bar .reader-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+.reader-bar .reader-btn:active:not(:disabled) { transform: scale(0.92); }
+.reader-bar .reader-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.reader-bar .reader-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.reader-bar .reader-btn.active {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+  box-shadow: 0 4px 12px color-mix(in oklab, var(--accent) 30%, transparent);
+}
+.reader-bar .reader-btn.active .icon { color: var(--on-accent); }
+/* Keep the accent fill (and its light icon) on hover of a SELECTED button —
+   otherwise the generic hover swaps in --surface2 and the on-accent icon
+   vanishes against it (white-on-near-white in light mode). */
+.reader-bar .reader-btn.active:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+  filter: brightness(1.08);
+}
+
+/* page counter as a Material tonal chip */
+.reader-bar .reader-counter {
+  flex: 0 0 auto;
+  min-width: 84px;
+  text-align: center;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s var(--ease);
+}
+.reader-bar .reader-counter:hover { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+
+/* draggable page slider (all modes) — visuals come from .m3-range */
+.reader-bar .reader-slider {
+  flex: 1 1 auto;
+  min-width: 56px;
+}
+/* the M3 handle gap should match the pill surface, not the modal's */
+.reader-bar input.m3-range::-webkit-slider-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--bg-elev) 92%, transparent); }
+.reader-bar input.m3-range::-moz-range-thumb { box-shadow: 0 0 0 4px color-mix(in srgb, var(--bg-elev) 92%, transparent); }
+
+@media (max-width: 760px) {
+  .reader-view .reader-bar {
+    gap: 8px; padding: 10px 14px;
+    background: color-mix(in srgb, var(--bg-elev) 90%, transparent);
+    backdrop-filter: blur(24px) saturate(1.6);
+    -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  }
+  .reader-view .reader-bar.top { padding-top: max(12px, env(safe-area-inset-top)); }
+  .reader-view .reader-bar.bottom {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  .reader-bar .reader-btn { width: 42px; height: 42px; }
+  .reader-bar .reader-counter { font-size: 16px; min-width: 72px; }
+  /* De-clutter the top-right on phones: the sidebar toggle has no sidebar to
+     toggle here, and native fullscreen is unreliable on mobile browsers — drop
+     both so only auto-scroll, bookmark, chapters and settings remain. */
+  .reader-bar.top .reader-sidebar-toggle,
+  .reader-bar.top .reader-fs-toggle { display: none; }
+  .reader-bar.top .reader-actions { gap: 8px; }
+  .reader-bar.top .reader-title .t-chapter { font-size: 15px; }
+  /* slider drops to its own full-width row below the buttons */
+  .reader-bar.bottom .reader-slider { flex-basis: 100%; order: 9; min-width: 0; height: 30px; }
+}
+
+/* ---- list rows ------------------------------------------------------- */
+.list { display: flex; flex-direction: column; gap: 9px; }
+.row-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px; border-radius: var(--radius); cursor: pointer;
+  background: var(--surface-grad); border: 1px solid var(--border);
+  transition: border-color 0.15s var(--ease), transform 0.1s var(--ease);
+}
+.row-item:hover { border-color: var(--border-strong); }
+.row-item .thumb { width: 46px; height: 64px; flex: 0 0 46px; border-radius: 9px; object-fit: cover; background: var(--surface3); }
+.row-item .row-main { flex: 1 1 auto; min-width: 0; }
+.row-item .row-main .name { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-item .row-main .sub { color: var(--text-dim); font-size: 12.5px; }
+.row-item .row-actions { display: flex; gap: 6px; align-items: center; flex: 0 0 auto; }
+
+/* ---- settings rows (HORIZONTAL — fixes the .field column clash) ------ */
+.setting-row {
+  /* wrap so a wide control (e.g. the 3-way reading-mode segmented) drops onto
+     its own line instead of overflowing — and being clipped by — the panel. */
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  flex-wrap: wrap; row-gap: 10px;
+  /* No inner divider — sections are already grouped; spacing separates rows so a
+     line never visually cuts through a wrapped control. */
+  padding: 12px 0;
+}
+.setting-row .row-main { min-width: 0; flex: 1 1 auto; }
+.setting-row .row-main .name { font-weight: 650; }
+.setting-row .row-main .sub { color: var(--text-faint); font-size: 12.5px; margin-top: 2px; }
+/* Inline controls sit on the right and may SHRINK (min-width:0) so a wide value
+   never overflows the panel; they keep their natural size until space runs out. */
+.setting-row .row-actions {
+  display: flex; align-items: center; gap: 8px;
+  flex: 0 1 auto; min-width: 0; max-width: 100%;
+  justify-content: flex-end; flex-wrap: wrap;
+  /* on a wrapped line the lone actions right-align (no-op when inline/stacked) */
+  margin-left: auto;
+}
+/* wide inline controls: cap to the row and let long values ellipsize/wrap
+   instead of pushing the label off-screen. */
+.setting-row .row-actions > .seg,
+.setting-row .row-actions > .menu-select-trigger { max-width: 100%; min-width: 0; }
+.setting-row .row-actions .hint,
+.setting-row .row-actions code.hint,
+.setting-row .row-actions > code {
+  min-width: 0; text-align: right; overflow-wrap: anywhere; word-break: break-word;
+}
+/* Stacked variant: typed/wide controls (text inputs, textareas, .input fields)
+   take a full-width line under the label — never crammed into the right slot. */
+.setting-row--stack { align-items: stretch; }
+.setting-row--stack .row-main { flex: 1 1 100%; }
+.setting-row--stack .row-actions {
+  flex: 1 1 100%; width: 100%; justify-content: flex-start;
+}
+.setting-row--stack .row-actions > .input,
+.setting-row--stack .row-actions > input,
+.setting-row--stack .row-actions > textarea { width: 100%; max-width: 100%; }
+/* On phones give every wrapped control the full row so nothing overflows, and
+   stretch segmented buttons edge-to-edge. Small inline controls (switches,
+   single buttons) still hug the right. */
+@media (max-width: 560px) {
+  .setting-row .row-actions > .seg,
+  .setting-row .row-actions > .menu-select-trigger,
+  .setting-row .row-actions > .input,
+  .setting-row .row-actions > input,
+  .setting-row .row-actions > textarea { width: 100%; }
+  .setting-row .row-actions:has(> .seg),
+  .setting-row .row-actions:has(> .menu-select-trigger),
+  .setting-row .row-actions:has(> .input),
+  .setting-row .row-actions:has(> input),
+  .setting-row .row-actions:has(> textarea) { flex: 1 1 100%; width: 100%; }
+  .setting-row .row-actions .seg { display: flex; width: 100%; }
+  .setting-row .row-actions .seg button { flex: 1 1 0; padding: 8px 6px; text-align: center; }
+}
+
+/* ---- progress bar ---------------------------------------------------- */
+.progress { position: relative; height: 7px; border-radius: 7px; background: var(--surface3); overflow: hidden; margin-top: 6px; }
+.progress > span { display: block; height: 100%; background: var(--grad-accent); transition: width 0.3s var(--ease); }
+/* Indeterminate: a travelling bar for unknown-duration work (JS toggles .indeterminate). */
+.progress.indeterminate > span { position: absolute; left: 0; top: 0; bottom: 0; width: 40%; animation: prog-indet 1.15s var(--ease) infinite; }
+@keyframes prog-indet { 0% { transform: translateX(-120%); } 100% { transform: translateX(320%); } }
+@media (prefers-reduced-motion: reduce) { .progress.indeterminate > span { animation: none; width: 100%; opacity: 0.35; } }
+
+/* ---- stat cards ------------------------------------------------------ */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
+.stat-card { background: var(--surface-grad); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; position: relative; overflow: hidden; }
+.stat-card::before { content: ""; position: absolute; inset: 0; background: var(--grad-accent-soft); opacity: 0.5; pointer-events: none; }
+.stat-card .num { font-size: 32px; font-weight: 780; letter-spacing: -0.02em; background: var(--grad-accent); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; position: relative; }
+.stat-card .lbl { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; position: relative; }
+
+/* ---- forms ----------------------------------------------------------- */
+.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.field > label { font-weight: 650; font-size: 13px; }
+.field .hint { color: var(--text-faint); font-size: 12px; }
+.field input[type="text"], .field input[type="number"], .field input[type="password"],
+.field input[type="email"], .field input[type="url"], .field input[type="search"], .field input:not([type]),
+.field select, .field textarea, input.field, select.field {
+  height: 40px; padding: 0 14px; border-radius: var(--radius-sm);
+  background: var(--bg-elev); --autofill-surface: var(--bg-elev); border: 1px solid var(--border); color: var(--text); width: 100%;
+  transition: border-color 0.15s var(--ease);
+}
+.field input:focus, .field select:focus, .field textarea:focus, input.field:focus { border-color: var(--accent); outline: none; }
+.field textarea { height: auto; min-height: 90px; padding: 10px 14px; resize: vertical; }
+.row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+/* Flat, boxless settings (Android/Material-style): section header + spaced rows,
+   no bordered card container. */
+.settings-section { background: none; border: none; border-radius: 0; padding: 0; margin-bottom: 34px; max-width: 760px; }
+.settings-section h2 { margin: 0 0 12px; font-size: 18px; }
+.swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+.swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.12s var(--ease); }
+.swatch:hover { transform: scale(1.12); }
+.swatch.active { border-color: var(--text); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+/* ---- colour-scheme preview cards (android item_color_scheme) ---------- */
+/* Single scrollable row (horizontal), with the scrollbar hidden for a clean
+   look. Padding keeps the selected card's 2px ring from being clipped. */
+.scheme-cards { display: flex; gap: 12px; overflow-x: auto; padding: 6px; scroll-snap-type: x proximity; scrollbar-width: none; }
+.scheme-cards::-webkit-scrollbar { display: none; }
+.scheme-card { flex: 0 0 auto; cursor: pointer; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; gap: 6px; outline: none; }
+.scheme-card-surface { position: relative; width: 84px; height: 116px; border-radius: 14px; background: var(--surface2); border: 1px solid var(--border); padding: 10px; box-sizing: border-box; display: flex; flex-direction: column; transition: box-shadow 0.15s var(--ease), border-color 0.15s var(--ease); }
+.scheme-card:hover .scheme-card-surface { border-color: var(--card-primary); }
+.scheme-card:focus-visible .scheme-card-surface { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--card-primary); }
+.scheme-card.active .scheme-card-surface { border-color: var(--card-primary); box-shadow: 0 0 0 2px var(--card-primary); }
+.scheme-abc { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: auto; }
+.scheme-bar { display: block; height: 6px; border-radius: 4px; margin-top: 6px; }
+.scheme-primary { position: absolute; inset-inline-end: 10px; inset-block-end: 10px; width: 18px; height: 18px; border-radius: 6px; }
+.scheme-check { position: absolute; inset-block-start: 8px; inset-inline-end: 8px; color: var(--card-primary); opacity: 0; transform: scale(0.6); transition: opacity 0.15s var(--ease), transform 0.15s var(--ease-spring); }
+.scheme-check svg { width: 18px; height: 18px; }
+.scheme-card.active .scheme-check { opacity: 1; transform: scale(1); }
+.scheme-name { font-size: 12px; font-weight: 600; color: var(--text-dim); }
+.scheme-card.active .scheme-name { color: var(--text); }
+
+/* ---- switch ---------------------------------------------------------- */
+.switch { position: relative; display: inline-block; width: 46px; height: 27px; flex: 0 0 46px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .slider { position: absolute; inset: 0; background: var(--surface3); border-radius: 999px; cursor: pointer; transition: 0.2s; }
+.switch .slider::before { content: ""; position: absolute; width: 21px; height: 21px; inset-inline-start: 3px; inset-block-start: 3px; background: var(--pure-white); border-radius: 50%; transition: 0.2s var(--ease-spring); box-shadow: var(--shadow-sm); }
+.switch input:checked + .slider { background: var(--grad-accent); }
+.switch input:checked + .slider::before { transform: translateX(19px); }
+/* Keyboard focus ring — the hidden checkbox is 0x0, so surface focus on the slider. */
+.switch input:focus-visible + .slider { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- checkbox (m3-check) --------------------------------------------- */
+.m3-check { display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.m3-check input { position: absolute; opacity: 0; width: 0; height: 0; }
+.m3-check-box { width: 18px; height: 18px; border: 2px solid var(--border-strong); border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; color: transparent; background: transparent; transition: background 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease); }
+.m3-check-box svg { width: 13px; height: 13px; }
+.m3-check input:checked + .m3-check-box { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.m3-check input:focus-visible + .m3-check-box { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---- states ---------------------------------------------------------- */
+.empty, .error-box {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 5px; text-align: center; padding: 72px 20px; color: var(--text-dim);
+}
+/* Flat SVG icon only — no disc, no gradient, no border. Just a clean muted glyph. */
+.empty-icon {
+  display: grid; place-items: center; margin-bottom: 14px;
+  width: auto; height: auto; background: none; border: none; border-radius: 0;
+}
+.empty-icon .icon { width: 44px; height: 44px; color: var(--text-faint); opacity: 0.85; }
+.empty-title { margin: 0; font-size: 15px; font-weight: 650; color: var(--text); letter-spacing: -0.01em; }
+.empty-sub { margin: 0; font-size: 13px; color: var(--text-faint); max-width: 340px; line-height: 1.55; }
+.empty > .icon { width: 40px; height: 40px; color: var(--text-faint); opacity: 0.7; }
+.empty > button, .empty > .btn { margin-top: 16px; }
+.error-box { color: var(--danger); }
+.center { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 60px 20px; color: var(--text-dim); flex-direction: column; }
+.spinner {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 2.5px solid var(--hairline);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+  will-change: transform;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 1.5s; } }
+.skeleton { position: relative; overflow: hidden; background: var(--surface1) !important; border-radius: var(--radius-sm); }
+.skeleton::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, var(--skeleton-shimmer), transparent);
+  transform: translateX(-100%); animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer { to { transform: translateX(100%); } }
+
+/* ---- modal ----------------------------------------------------------- */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  background: var(--overlay-strong); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  opacity: 0; transition: opacity 0.18s var(--ease);
+}
+.modal-backdrop.open { opacity: 1; }
+.modal {
+  width: 100%; max-width: 460px;
+  background: var(--surface-grad); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow);
+  transform: translateY(10px) scale(0.98); transition: transform 0.2s var(--ease-spring);
+  max-height: 86vh; display: flex; flex-direction: column;
+}
+.modal-backdrop.open .modal { transform: none; }
+.modal-head {
+  padding: 20px 22px 4px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  font-size: 18px; font-weight: 700;
+}
+.modal-head h3 { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.modal-head .icon-btn { flex: 0 0 36px; width: 36px; height: 36px; }
+.modal-body { padding: 16px 22px; overflow-y: auto; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding: 8px 22px 20px; }
+
+/* ---- toast ----------------------------------------------------------- */
+.toast {
+  position: fixed; inset-block-start: calc(20px + env(safe-area-inset-top)); inset-inline-start: 50%; transform: translateX(-50%);
+  z-index: 200; max-width: 90vw;
+  background: var(--surface3); color: var(--text);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
+  padding: 12px 22px; box-shadow: var(--shadow); font-weight: 550;
+}
+
+/* ---- icons ----------------------------------------------------------- */
+.icon { display: inline-flex; align-items: center; justify-content: center; }
+.icon svg { width: 100%; height: 100%; display: block; }
+
+/* ---- explore: browse-pane head (tappable source pill + controls) ----- */
+.browse-head { display: flex; align-items: center; gap: 12px; margin: 2px 0 18px; flex-wrap: wrap; }
+/* Source pill: medallion + name/meta + chevron. Tapping opens the source
+   sheet (mobile) / source list (desktop). */
+.source-select {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 14px;
+  background: var(--surface1); border: 1px solid var(--border); color: var(--text);
+  padding: 8px 14px 8px 10px; border-radius: var(--radius-pill);
+  text-align: start; cursor: pointer;
+  transition: border-color 0.16s var(--ease), background 0.16s var(--ease);
+}
+.source-select:hover { border-color: var(--accent); background: var(--surface2); }
+.source-select .medallion {
+  width: 42px; height: 42px; flex: 0 0 42px;
+  color: var(--accent);
+  display: grid; place-items: center; font-weight: 800; font-size: 16px;
+}
+.source-select-main { min-width: 0; flex: 1 1 auto; display: flex; flex-direction: column; gap: 1px; }
+.source-select-main .name {
+  font-size: 16px; font-weight: 720; letter-spacing: -0.012em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.source-select-main .sub { color: var(--text-dim); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.source-select > .icon { flex: 0 0 auto; color: var(--text-faint); }
+.browse-head-actions { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.src-close { display: none; }
+
+/* ---- mobile bottom tab bar (app-like) ------------------------------- */
+.tabbar { display: none; }
+
+/* ---- responsive: tablet --------------------------------------------- */
+/* Keep the two-pane layout down to mobile; just narrow the source column. */
+@media (max-width: 1040px) {
+  .explore { grid-template-columns: 248px 1fr; gap: 18px; }
+}
+
+/* ---- mobile --------------------------------------------------------- */
+.nav-toggle { display: none; }
+
+@media (max-width: 760px) {
+  :root, :root[data-theme] {
+    --topbar-h: 56px;
+    --mobile-tabbar-h: 64px;
+    --radius: 12px; --radius-sm: 9px; --radius-lg: 16px;
+  }
+  body { display: block; background: var(--bg); }
+
+  /* ---- top bar: flat, hairline-divided, calm ------------------------- */
+  .topbar {
+    height: var(--topbar-h); min-height: var(--topbar-h);
+    flex-wrap: nowrap; align-content: normal;
+    padding: max(6px, env(safe-area-inset-top)) 18px 8px;
+    gap: 12px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--hairline);
+    box-shadow: none;
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  body.hide-topbar .topbar { display: none; }
+  .topbar .spacer { display: none; }
+  .visit-site { display: none; }
+  .search-form { display: none; }
+  .source-btn { display: none; }    /* source is chosen inside Explore on mobile */
+
+  .mobile-brand {
+    display: inline-flex; align-items: center; gap: 9px; order: 1;
+    min-width: 0; flex: 1 1 auto; height: 40px;
+    border: 0; background: transparent; color: var(--text);
+    padding: 0; font-family: var(--font-display); font-weight: 700; font-size: 19px; letter-spacing: -0.01em;
+    transition: opacity 0.16s var(--ease);
+  }
+  .mobile-brand:active { opacity: 0.6; }
+  .mobile-brand-logo { width: 26px; height: 26px; border-radius: 8px; box-shadow: 0 0 0 1px var(--hairline); }
+  .mobile-brand-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* nav toggle + search: minimal ghost icon buttons, hairline, no accent fill */
+  .nav-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; flex: 0 0 40px; padding: 0; order: 3; gap: 0;
+    border: 1px solid var(--hairline); border-radius: 10px;
+    background: transparent; color: var(--text); box-shadow: none;
+    transition: background 0.16s var(--ease), border-color 0.16s var(--ease);
+  }
+  .nav-toggle:active { background: var(--surface1); }
+  .nav-toggle .icon { width: 19px; height: 19px; color: currentColor; }
+  .nav-toggle-label { display: none; }   /* icon-only on mobile, minimal */
+  .mobile-search-action {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 40px; height: 40px; flex: 0 0 40px; order: 2;
+    border: 1px solid var(--hairline); border-radius: 10px;
+    background: transparent; color: var(--text); box-shadow: none;
+    transition: background 0.16s var(--ease), border-color 0.16s var(--ease);
+  }
+  .mobile-search-action:active { background: var(--surface1); }
+  .mobile-search-action:hover { background: var(--surface1); border-color: var(--border-strong); }
+  .mobile-search-action .icon { width: 19px; height: 19px; color: currentColor; }
+
+  /* search overlay: clean dim + simple flat field */
+  /* Search overlay: a single clean bar that drops from the top. One elevated
+     surface (no nested boxes), search glyph leading, a quiet close trailing.
+     Submitting is the keyboard "Search" key / Enter — so no loud accent
+     button competes with the field. */
+  .mobile-search-scrim {
+    position: fixed; inset: 0; z-index: 70;
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .mobile-search-panel {
+    position: fixed; inset-block-start: max(10px, env(safe-area-inset-top)); inset-inline-start: 14px; inset-inline-end: 14px; z-index: 75;
+    align-items: center; gap: 0;
+    height: 54px; padding: 0 6px 0 18px;
+    border-radius: 16px;
+    background: var(--bg-elev); --autofill-surface: var(--bg-elev);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-pop);
+    transform: translateY(-10px); opacity: 0; pointer-events: none;
+    transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
+  }
+  body.search-open .mobile-search-scrim { display: block; }
+  body.search-open .mobile-search-panel { display: flex; opacity: 1; pointer-events: auto; transform: none; }
+  /* the field is transparent — the panel itself is the bar */
+  .mobile-search-field {
+    display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto;
+    height: 100%; padding: 0; border: 0; border-radius: 0; background: transparent;
+  }
+  .mobile-search-field > .icon { width: 20px; height: 20px; color: var(--text-faint); flex: 0 0 auto; }
+  .mobile-search-field input {
+    min-width: 0; flex: 1 1 auto; height: 100%; border: 0; outline: 0;
+    background: transparent; color: var(--text); font-size: 16px; font-weight: 500;
+  }
+  .mobile-search-field input::placeholder { color: var(--text-faint); }
+  .mobile-search-submit { display: none; }   /* Enter / keyboard "Search" submits */
+  .mobile-search-close {
+    display: inline-grid; place-items: center; flex: 0 0 42px;
+    width: 42px; height: 42px; border-radius: 12px; border: 0;
+    background: transparent; color: var(--text-faint);
+    transition: background 0.16s var(--ease), color 0.16s var(--ease);
+  }
+  .mobile-search-close:active { background: var(--surface1); color: var(--text); transform: scale(0.94); }
+  .mobile-search-close .icon { width: 18px; height: 18px; color: currentColor; }
+
+  /* ---- off-canvas drawer (flat, hairline) ---------------------------- */
+  .sidebar {
+    position: fixed; inset-block-start: 0; inset-inline-start: 0; height: 100dvh;
+    width: min(82vw, 300px); flex-basis: min(82vw, 300px);
+    z-index: 60; transform: translateX(-100%); transition: transform 0.26s var(--ease);
+    box-shadow: var(--shadow-sm);
+    padding: max(18px, env(safe-area-inset-top)) 14px max(18px, env(safe-area-inset-bottom));
+    border-inline-end: 1px solid var(--border); border-radius: 0;
+    background: var(--bg-elev);
+  }
+  body.nav-open .sidebar { transform: none; }
+  .nav-scrim {
+    position: fixed; inset: 0; z-index: 55; background: var(--overlay);
+    display: none; opacity: 0; transition: opacity 0.26s var(--ease);
+  }
+  body.nav-open .nav-scrim { display: block; opacity: 1; }
+  .sidebar .nav-item { padding: 11px 12px; min-height: 46px; }
+  .sidebar .nav-item .icon svg { width: 21px; height: 21px; }
+
+  .main { min-height: 100dvh; }
+
+  /* ---- view scaffolding: generous whitespace ------------------------- */
+  .view {
+    padding: 22px 20px calc(var(--mobile-tabbar-h) + 28px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+  }
+  .page-title {
+    font-family: var(--font-display); font-size: 24px; line-height: 1.1;
+    font-weight: 700; letter-spacing: -0.02em;
+  }
+  .section-header { margin: 32px 0 16px; align-items: baseline; flex-wrap: wrap; }
+  .section-header > h2 { min-width: 0; }
+  .section-header h2 {
+    font-family: var(--font-display); font-size: 20px; font-weight: 600; letter-spacing: -0.015em;
+  }
+  .section-header .icon { width: 20px; height: 20px; color: var(--text-dim); opacity: 1; }
+
+  /* tap targets */
+  .btn { min-height: 46px; }
+  .nav-item, .tab, .chip[role="button"] { min-height: 44px; }
+  .btn:active, .btn-accent:active { transform: scale(0.98); }
+  .btn-sm { min-height: 36px; }
+  .chip[role="button"]:active, .tab:active { transform: scale(0.98); }
+
+  /* ---- cover grid: framed covers, title + chips below, no overlays --- */
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 16px; }
+  .grid.dense { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px 12px; }
+  .card {
+    gap: 10px; padding: 0; border-radius: 0;
+    background: transparent; border: 0; box-shadow: none;
+  }
+  .card::before { display: none; }     /* kill decorative corner accents */
+  .card:active { transform: scale(0.985); }
+  .card .cover {
+    border-radius: 12px;
+    border: 1px solid var(--hairline);
+    box-shadow: none;
+  }
+  .card .cover::after { display: none; }   /* no scrim on minimal grid */
+  .card .title {
+    font-size: 13.5px; font-weight: 600; line-height: 1.25;
+    letter-spacing: -0.004em; color: var(--text);
+  }
+  /* chips flow BELOW the cover (never overlaid), muted + hairline */
+  .card .chips {
+    position: static !important; inset: auto !important;
+    gap: 6px; padding: 0; pointer-events: auto; backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  /* overlay cover-chips (discover rails / suggestions) stay pinned to the cover */
+  .card .cover .cover-chips {
+    position: absolute !important; left: 8px !important; right: 8px !important;
+    bottom: 8px !important; top: auto !important;
+  }
+  .card .chip {
+    min-height: 22px; padding: 0 8px; border-radius: 6px;
+    background: transparent; border: 1px solid var(--hairline);
+    color: var(--text-dim); font-size: 11px; font-weight: 500;
+    backdrop-filter: none; -webkit-backdrop-filter: none;
+  }
+  .card .chip.status-completed {
+    color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: transparent;
+  }
+
+  /* ---- explore ------------------------------------------------------- */
+  .explore { display: block; }
+  .source-pane { display: none; }
+  .browse-head { gap: 14px; margin: 0 0 22px; }
+  .source-select {
+    flex: 1 1 100%; min-height: 56px; border-radius: var(--radius); gap: 12px; padding: 10px 12px;
+    background: var(--surface1); border: 1px solid var(--border);
+  }
+  /* Back button + pill share the first row in the source-tile browse view. */
+  .explore-browse .browse-head > .icon-btn { flex: 0 0 44px; height: 56px; border-radius: var(--radius); }
+  .explore-browse .source-select { flex: 1 1 0; }
+  .source-select:hover { background: var(--surface2); border-color: var(--border-strong); }
+  .source-select .medallion {
+    width: 42px; height: 42px; flex-basis: 42px; border-radius: 11px; font-size: 13px;
+    background: var(--surface3); border: 1px solid var(--border); color: var(--text);
+  }
+  .source-select-main .name { font-size: 16px; font-weight: 650; }
+  .source-select-main .sub { font-size: 13px; font-weight: 500; color: var(--text-dim); }
+  .browse-head-actions {
+    flex: 1 1 100%; justify-content: space-between; gap: 8px;
+    overflow-x: auto; padding-bottom: 2px; scrollbar-width: none;
+  }
+  .browse-head-actions::-webkit-scrollbar { display: none; }
+  .browse-head-actions .seg {
+    flex: 1 1 auto; min-width: 240px; height: 42px; border-radius: 10px; padding: 4px;
+    background: var(--surface1); border: 1px solid var(--border);
+  }
+  .browse-head-actions .seg button { flex: 1 1 auto; border-radius: 7px; font-size: 14px; font-weight: 600; }
+  .browse-head-actions .icon-btn { border-radius: 10px; height: 42px; width: 42px; flex-basis: 42px; }
+  .browse-searchbar {
+    position: sticky; inset-block-start: calc(var(--topbar-h) - 1px); z-index: 8;
+    margin: -4px 0 18px; padding: 10px 0; background: var(--bg);
+  }
+  .source-sheet-list { gap: 12px; }
+  .source-sheet-list .source-list-body { max-height: 60dvh; gap: 6px; }
+  .source-sheet-list .source-row { padding: 10px 12px; min-height: 48px; border-radius: var(--radius); }
+  .source-sheet-list .source-row .thumb { width: 40px; height: 40px; flex-basis: 40px; }
+
+  /* ---- details: clean, centered, light hero ------------------------- */
+  .details-hero { border-radius: 0; margin: -22px -20px 0; }
+  .details-hero .hero-bg { filter: blur(40px); transform: scale(1.2); opacity: 0.22; }
+  .details-hero .hero-bg::after {
+    background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 55%, transparent), var(--bg) 82%);
+  }
+  .details-head { grid-template-columns: 1fr; gap: 20px; padding: 18px 20px 24px; }
+  .details-back, .details-backbar .icon-btn {
+    inset-block-start: 14px; inset-inline-start: 16px; width: 40px; height: 40px;
+    background: color-mix(in srgb, var(--bg) 62%, transparent); border: 1px solid var(--hairline);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .details-back:active { transform: scale(0.95); }
+  .details-summary { position: static; gap: 14px; align-items: center; }
+  .details-summary > .cover {
+    width: min(46vw, 172px); align-self: center; box-shadow: none; border: 1px solid var(--hairline);
+  }
+  .details-title {
+    font-family: var(--font-display); font-size: 22px; font-weight: 700; text-align: center;
+    line-height: 1.18; margin: 4px 0 6px; letter-spacing: -0.02em;
+  }
+  .details-authors { font-size: 13.5px; font-weight: 500; text-align: center; color: var(--text-dim); }
+  .details-meta { justify-content: center; }
+  .details-actions { width: 100%; justify-content: center; gap: 8px; margin: 10px 0 2px; }
+  .details-actions .details-cta {
+    flex: 1 1 100%; height: 50px; min-height: 50px; font-size: 15px; font-weight: 650;
+    border-radius: var(--radius); box-shadow: none;
+  }
+  .details-actions .btn:not(.details-cta) {
+    flex: 1 1 auto; height: 50px; min-height: 50px; border-radius: var(--radius);
+  }
+  .tag-chips { justify-content: center; }
+  .desc { text-align: center; font-size: 14px; line-height: 1.65; margin: 14px 0 0; color: var(--text-dim); }
+  .desc.clamp { -webkit-line-clamp: 4; line-clamp: 4; }
+  .desc-wrap { align-items: center; }
+  .desc-wrap .btn-sm { align-self: center; }
+  .details-chapters { margin-top: 24px; }
+  .chapter-list li:active { background: var(--surface1); }
+
+  .reader.webtoon .reader-page { max-width: 100%; }
+
+  /* ---- list rows: hairline, flat ------------------------------------ */
+  .row-item {
+    gap: 12px; padding: 12px; border-radius: var(--radius); min-height: 66px;
+    background: transparent; border: 1px solid var(--hairline);
+  }
+  .row-item:active { transform: scale(0.99); background: var(--surface1); }
+  .row-item .thumb { width: 44px; height: 62px; flex-basis: 44px; }
+  .row-item .row-main .name { font-size: 14px; }
+  .row-item .row-main .sub { font-size: 12.5px; }
+
+  /* ---- settings: hairline-divided sections, calm --------------------- */
+  .settings-section { max-width: 100%; padding: 0; margin-bottom: 28px; border: none; }
+  .settings-section h2 { font-family: var(--font-display); font-size: 16px; font-weight: 600; }
+  .setting-row { flex-wrap: wrap; gap: 12px; padding: 14px 0; }
+  .setting-row .row-main .name { font-size: 15px; font-weight: 550; }
+  .setting-row .row-main .sub { font-size: 12px; }
+  .field input[type="text"], .field input[type="number"], .field input[type="password"],
+  .field input[type="email"], .field input[type="url"], .field input[type="search"], .field input:not([type]),
+  .field select, input.field, select.field { height: 44px; }
+  .swatch { width: 34px; height: 34px; }
+  .swatch:hover { transform: scale(1.1); }
+  .swatch.active { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent); }
+  .scheme-cards { gap: 10px; margin: 0; padding: 6px 4px 12px; }
+  .scheme-card-surface { width: 76px; height: 106px; }
+  .switch { width: 48px; height: 28px; flex-basis: 48px; }
+  .switch .slider::before { width: 22px; height: 22px; }
+  .switch input:checked + .slider::before { transform: translateX(20px); }
+  .seg button.active { box-shadow: none; }
+
+  /* Route backgrounds: intentionally NONE — clean neutral base on every
+     screen. The page title carries a calm, consistent display size. */
+  body[data-route="library"] .library-header,
+  body[data-route="suggestions"] .suggest-section .section-header { margin: 0 0 18px; align-items: baseline; }
+  body[data-route="library"] .page-title,
+  body[data-route="suggestions"] .suggest-section .section-header h2,
+  body[data-route="search"] .page-title {
+    font-family: var(--font-display); font-size: 24px; line-height: 1.1; font-weight: 700; letter-spacing: -0.02em;
+  }
+  body[data-route="library"] .library-sort-row { margin-bottom: 18px !important; }
+  body[data-route="library"] .library-sort-row .seg {
+    width: 100%; height: 44px; padding: 4px; border-radius: 10px;
+    background: var(--surface1); border: 1px solid var(--border);
+  }
+  body[data-route="library"] .library-sort-row .seg button { flex: 1 1 0; border-radius: 7px; font-size: 14px; font-weight: 600; }
+  body[data-route="library"] .library-filter-row { margin-bottom: 26px !important; gap: 8px; }
+  body[data-route="library"] .library-filter-row .chip {
+    min-height: 40px; padding: 0 14px; border-radius: 999px;
+    background: transparent; border: 1px solid var(--hairline);
+    color: var(--text-dim); font-size: 13.5px; font-weight: 550;
+  }
+  body[data-route="library"] .library-filter-row .chip.active {
+    background: var(--accent); border-color: transparent; color: var(--on-accent);
+  }
+  body[data-route="library"] .empty,
+  body[data-route="suggestions"] .empty { min-height: 44vh; padding: 42px 14px; }
+
+  /* ---- modal -> bottom sheet (minimal) ------------------------------ */
+  .modal-backdrop { align-items: flex-end; padding: 0; }
+  .modal {
+    max-width: none; max-height: 90dvh; border-radius: 18px 18px 0 0;
+    border-inline-start: 0; border-inline-end: 0; border-bottom: 0;
+  }
+  .modal::before {
+    content: ""; width: 40px; height: 4px; border-radius: 999px;
+    background: var(--border-strong); align-self: center; margin-top: 10px;
+  }
+  .modal-actions { flex-wrap: wrap; }
+  .modal-actions .btn { flex: 1 1 auto; }
+
+  /* ---- bottom nav: floating rounded pill + detached reader FAB -------- */
+  /* Matches the android app: the 4 primary destinations live inside a
+     centred, floating rounded pill; a circular "continue reading" FAB
+     floats detached to its right. */
+  .tabbar {
+    display: flex; position: fixed; inset-inline-start: 0; inset-inline-end: 0; z-index: 50;
+    inset-block-end: max(14px, env(safe-area-inset-bottom));
+    align-items: center; justify-content: center; gap: 12px;
+    padding: 0 16px;
+    background: transparent; border: 0; box-shadow: none;
+    pointer-events: none; /* only the pill + fab are interactive */
+  }
+  .tabbar-pill {
+    pointer-events: auto;
+    display: flex; align-items: stretch; justify-content: space-around;
+    flex: 1 1 auto; max-width: 420px; min-width: 0;
+    background: var(--surface1, var(--bg));
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28), 0 2px 8px rgba(0, 0, 0, 0.16);
+    padding: 8px 6px;
+    backdrop-filter: saturate(1.2) blur(12px); -webkit-backdrop-filter: saturate(1.2) blur(12px);
+  }
+  .tabbar-pill a {
+    flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    min-width: 0; justify-content: center; padding: 4px 2px;
+    color: var(--text-faint); font-size: 10px; font-weight: 500;
+    border: 0; border-radius: 14px; background: transparent;
+    transition: color 0.18s var(--ease), background 0.18s var(--ease);
+  }
+  .tabbar-pill a .icon { width: 22px; height: 22px; transition: transform 0.18s var(--ease); }
+  .tabbar-pill a span:not(.icon) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tabbar-pill a:active .icon { transform: scale(0.9); }
+  .tabbar-pill a:hover { color: var(--text-dim); }
+  /* Material-3 style active destination — indigo pill behind the current tab,
+     mirroring the nyora-android bottom nav. */
+  .tabbar-pill a.active { color: var(--accent); background: var(--accent-soft); }
+  .tabbar-pill a.active .icon { color: var(--accent); }
+  .tabbar-fab {
+    pointer-events: auto;
+    flex: 0 0 auto; display: flex; align-items: center; justify-content: center;
+    width: 56px; height: 56px; border-radius: 999px; border: 0;
+    /* Deepen the accent so light pastel schemes (e.g. Sakura in dark) don't blow
+       out, and keep a white icon readable; soften the coloured glow too. */
+    background: color-mix(in oklab, var(--accent) 74%, #000); color: #fff; cursor: pointer;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.34), 0 3px 10px color-mix(in oklab, var(--accent) 18%, transparent), 0 2px 6px rgba(0, 0, 0, 0.18);
+    transition: transform 0.18s var(--ease), filter 0.18s var(--ease);
+  }
+  .tabbar-fab .icon { width: 26px; height: 26px; }
+  .tabbar-fab:active { transform: scale(0.92); }
+  .tabbar-fab:hover { filter: brightness(1.06); }
+}
+
+@media (max-width: 380px) {
+  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; }
+  .grid.dense { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 10px; }
+  body[data-route="suggestions"] .grid { gap: 18px 12px; }
+  .view { padding-inline-start: 16px; padding-inline-end: 16px; }
+  .topbar { padding-inline-start: 14px; padding-inline-end: 14px; }
+  .tabbar a { font-size: 10px; }
+  /* Tightest phones: Favourite also takes a full row so nothing is cramped. */
+  .details-actions .btn:not(.details-cta) { flex: 1 1 100%; }
+  .details-actions-icons { width: 100%; justify-content: center; }
+}
+
+/* ---- search redesign ------------------------------------------------- */
+.search-page-header {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 10;
+  background: var(--bg);
+  padding: 8px 0 16px;
+  margin-top: -16px; /* offset view padding */
+}
+
+.search-field-v2 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface-grad);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0 16px;
+  height: 52px;
+  transition: border-color 0.2s var(--ease);
+}
+
+.search-field-v2:focus-within {
+  border-color: var(--accent);
+}
+
+.search-field-v2 input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 16px;
+  min-width: 0;
+}
+.search-field-v2 .btn {
+  flex: 0 0 auto;
+  border-radius: 999px;
+}
+
+.search-status {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 20px;
+}
+
+/* ---- search: language filter ---------------------------------------- */
+.search-filters {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 20px;
+  flex-wrap: wrap;
+}
+.search-filters-label {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+/* Language filter is a menuSelect trigger now — only sizing lives here. */
+.lang-select { min-width: 170px; max-width: 260px; }
+
+/* ---- search: recent queries + status note ---------------------------- */
+/* Shown only on the empty state, above the "search everything" placeholder,
+   so the screen offers something to act on instead of a bare glyph. */
+.search-recent { margin: 0 0 28px; }
+/* Label and its Clear action sit together rather than spanning the full content
+   width — across a wide results column a right-aligned action reads as stranded
+   rather than paired. */
+.search-recent-head {
+  display: flex; align-items: center; justify-content: flex-start;
+  gap: 6px; margin-bottom: 12px;
+}
+.search-recent-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Trailing note after the result summary — the count of sources that never
+   answered. Quieter than the summary chip: it qualifies, it doesn't report. */
+.search-status-note { color: var(--text-faint); font-size: 12px; }
+@media (max-width: 760px) {
+  .lang-select { flex: 1 1 auto; max-width: none; }
+}
+
+.medallion-sm {
+  width: 24px;
+  height: 24px;
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 11px;
+}
+
+@media (max-width: 760px) {
+  /* Clean neutral base — no route gradient. */
+  body[data-route="search"] .view {
+    padding: 22px 20px calc(var(--mobile-tabbar-h) + 28px + env(safe-area-inset-bottom));
+  }
+  body[data-route="search"] .page-title {
+    font-family: var(--font-display); font-size: 24px; line-height: 1.1;
+    font-weight: 700; letter-spacing: -0.02em; margin-bottom: 16px !important;
+  }
+  body[data-route="search"] .search-page-header {
+    position: static; padding: 0; margin: 0 0 18px; background: transparent;
+  }
+  body[data-route="search"] .search-field-v2 {
+    height: 52px; padding: 0 8px 0 16px; border-radius: 12px;
+    background: var(--surface1); border: 1px solid var(--border); box-shadow: none;
+  }
+  body[data-route="search"] .search-field-v2:focus-within {
+    border-color: var(--accent); box-shadow: none;
+  }
+  body[data-route="search"] .search-field-v2 > .icon {
+    width: 19px; height: 19px; color: var(--text-faint);
+  }
+  body[data-route="search"] .search-field-v2 input { font-size: 16px; font-weight: 500; }
+  body[data-route="search"] .search-field-v2 input::placeholder { color: var(--text-faint); }
+  body[data-route="search"] .search-field-v2 .btn {
+    height: 40px; min-height: 40px; padding: 0 16px; font-size: 13px; font-weight: 600;
+  }
+  body[data-route="search"] .search-status { margin: 0 0 18px !important; }
+  body[data-route="search"] .empty {
+    min-height: 42vh; padding: 48px 18px; color: var(--text-dim);
+    border-radius: var(--radius-lg);
+    background: transparent; border: 1px solid var(--hairline); box-shadow: none;
+  }
+  body[data-route="search"] .empty .icon { width: 48px; height: 48px; opacity: 0.7; color: var(--text-faint); }
+  body[data-route="search"] .empty p { max-width: 280px; font-size: 15px; line-height: 1.5; }
+  body[data-route="search"] .search-source-card-minimal {
+    margin-inline-start: 0; margin-inline-end: 0; border-radius: var(--radius-lg); padding: 16px;
+    background: transparent; border: 1px solid var(--hairline); box-shadow: none;
+  }
+  body[data-route="search"] .search-source-card-minimal .card {
+    background: transparent; box-shadow: none;
+  }
+}
+
+/* ---- global search redesign ----------------------------------------- */
+.search-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-dim);
+}
+
+.search-hero .hero-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 24px;
+  background: var(--surface-grad);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.search-hero .hero-icon svg { width: 40px; height: 40px; color: var(--accent); }
+.search-hero h2 { font-size: 24px; color: var(--text); margin-bottom: 12px; font-weight: 700; }
+.search-hero p { max-width: 360px; margin: 0 auto 32px; font-size: 15px; line-height: 1.6; }
+
+.search-hints {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.hint-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; color: var(--text-faint); }
+
+.search-source-card {
+  background: var(--surface-grad);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.search-result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.source-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.source-name { font-size: 15px; font-weight: 700; }
+.source-sub { font-size: 11px; color: var(--text-faint); }
+
+@media (max-width: 760px) {
+  .search-hero { padding: 40px 14px; }
+  .search-source-card { border-radius: 0; margin-inline-start: -14px; margin-inline-end: -14px; border-inline-start: 0; border-inline-end: 0; }
+}
+
+/* ---- search minimal dark --------------------------------------------- */
+.search-source-card-minimal {
+  background: var(--surface-grad);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+/* ---- reader width control -------------------------------------------
+   --reader-width is a PERCENTAGE of the reader area (which already excludes
+   the sidebar via the flex layout), so the webtoon column is responsive:
+   it scales with the window and gets wider when the sidebar is hidden. */
+.reader.webtoon .reader-page {
+  width: var(--reader-width, 70%);
+  max-width: 100%;
+  margin-inline: auto;
+  /* Reserve space BEFORE the lazy image loads so pages below don't reflow as
+     each one arrives (keeps scroll position, the X/Y counter and auto-scroll
+     stable). On load, pageImg pins the real aspect-ratio inline, overriding this
+     portrait placeholder, and .loaded drops the skeleton fill. */
+  aspect-ratio: 70 / 100;
+  background: var(--surface1);
+}
+.reader.webtoon .reader-page.loaded { background: none; }
+
+/* ---- cover download overlay ----------------------------------------- */
+.details-summary .cover {
+  position: relative;
+}
+
+.cover-download-btn {
+  position: absolute;
+  inset-block-start: 12px;
+  inset-inline-end: 12px;
+  z-index: 5;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-elev) 80%, transparent) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-strong) !important;
+  color: var(--text) !important;
+  box-shadow: var(--shadow-sm);
+  opacity: 0;
+  transform: translateY(4px);
+  transition: all 0.2s var(--ease);
+}
+
+.details-summary .cover:hover .cover-download-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cover-download-btn:hover {
+  background: var(--accent) !important;
+  color: var(--on-accent) !important;
+  border-color: transparent !important;
+  transform: scale(1.05) !important;
+}
+
+/* ---- downloads ------------------------------------------------------- */
+
+.downloads-host { margin-top: 8px; }
+.downloads-host .progress { width: 100%; }
+.row-item .dl-meta { color: var(--text-dim); font-size: 12.5px; margin-top: 4px; }
+.row-item .dl-warn { color: var(--warn); font-size: 12.5px; margin-top: 4px; }
+.row-item .dl-err { color: var(--danger); font-size: 12.5px; margin-top: 4px; }
+.chip.status-cancelled { color: var(--text-faint); border-color: var(--border-strong); }
+
+/* chapter-row download button states */
+.chapter-list li .icon-btn.dl-done,
+.chapter-list li .icon-btn.dl-done .icon { color: var(--ok); }
+.chapter-list li .icon-btn.dl-queued,
+.chapter-list li .icon-btn.dl-queued .icon { color: var(--accent); }
+
+/* download dialog */
+.dl-dialog { display: flex; flex-direction: column; gap: 14px; min-width: min(440px, 78vw); }
+.dl-quick { display: flex; flex-wrap: wrap; gap: 8px; }
+.dl-range { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dl-range-label { font-weight: 650; font-size: 13px; flex: 0 0 auto; }
+.dl-range .field { margin-bottom: 0; flex: 1 1 120px; min-width: 0; height: 38px; }
+.dl-range-sep { color: var(--text-faint); flex: 0 0 auto; }
+.dl-picklist {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 42vh; overflow-y: auto;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 6px;
+}
+.dl-pick {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 9px; cursor: pointer;
+}
+.dl-pick:hover { background: var(--surface1); }
+.dl-pick-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; }
+.dl-badge { flex: 0 0 auto; font-size: 11px; }
+.dl-footer {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-top: 4px; border-top: 1px solid var(--border);
+}
+.dl-count { color: var(--text-dim); font-size: 13px; }
+.dl-footer .btn { flex: 0 0 auto; }
+
+/* ---- brand polish --------------------------------------------------- */
+.logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.brand span {
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  font-size: 16px;
+}
+/* ---- GIS account-chooser fallback modal ------------------------------- */
+.gis-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--overlay);
+  backdrop-filter: blur(2px);
+}
+.gis-modal-card {
+  background: var(--surface1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow);
+}
+.gis-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+.gis-btn-slot {
+  min-height: 44px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 999px;
+  overflow: hidden; /* clip GIS's own container to a clean pill — no ragged white box */
+}
+.gis-modal-cancel {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 10px;
+}
+.gis-modal-cancel:hover { color: var(--text); }
+
+
+
+/* ====================================================================== */
+/*  Start screen — editorial night-rain landing (split hero + auth)        */
+/* ====================================================================== */
+.wlc {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: safe center;
+  grid-template-columns: minmax(0, 1fr);
+  padding: clamp(22px, 4vw, 60px);
+  /* Scroll the card when it's taller than the screen instead of clipping it, and
+     keep the scroll contained so the page behind never moves (mobile fix). */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--wlc-text);
+  background: var(--wlc-sky-2);   /* flat sky (was a mono radial gradient) */
+  isolation: isolate;
+}
+/* While the welcome is up, lock the page behind it — no main-content flash, no
+   scroll-through. Class is added/removed by screens/welcome.js. */
+.wlc-open, .wlc-open body { overflow: hidden; }
+.wlc.is-leaving { animation: wlc-out 0.38s ease forwards; }
+@keyframes wlc-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes wlc-out { to { opacity: 0; transform: scale(1.015); } }
+
+/* ---- atmosphere ------------------------------------------------------- */
+.wlc-sky { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
+.wlc-glow { position: absolute; border-radius: 50%; filter: blur(58px); will-change: transform; }
+.wlc-glow-1 {
+  width: 56vmax; height: 56vmax; inset-inline-start: -18vmax; inset-block-start: -22vmax;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, transparent), transparent 70%);
+  opacity: 0.34; animation: wlc-drift-a 19s ease-in-out infinite alternate;
+}
+.wlc-glow-2 {
+  width: 50vmax; height: 50vmax; inset-inline-end: -20vmax; inset-block-end: -26vmax;
+  background: radial-gradient(circle, var(--wlc-blue), transparent 70%);
+  opacity: 0.26; animation: wlc-drift-b 24s ease-in-out infinite alternate;
+}
+@keyframes wlc-drift-a { to { transform: translate(5vmax, 4vmax) scale(1.1); } }
+@keyframes wlc-drift-b { to { transform: translate(-4vmax, -5vmax) scale(1.08); } }
+.wlc-mist {
+  position: absolute; inset: -12%;
+  background:
+    radial-gradient(42% 30% at 20% 84%, var(--wlc-mist-1), transparent 60%),
+    radial-gradient(46% 36% at 78% 68%, var(--wlc-mist-2), transparent 60%);
+  animation: wlc-mist 28s ease-in-out infinite alternate;
+}
+@keyframes wlc-mist { to { transform: translate(3%, -2%); } }
+.wlc-horizon {
+  position: absolute; inset-inline-start: 0; inset-inline-end: 0; inset-block-end: 0; height: 40%;
+  background: linear-gradient(to top, color-mix(in srgb, var(--accent) 13%, transparent), transparent 78%);
+  mix-blend-mode: screen; opacity: 0.5;
+}
+.wlc-rain { position: absolute; inset: -28% -28%; transform: rotate(8deg); pointer-events: none; }
+.wlc-rain.is-back { opacity: 0.5; filter: blur(0.6px); transform: rotate(8deg) scale(1.12); }
+.wlc-drop {
+  position: absolute; inset-block-start: -22%;
+  width: 1.3px; border-radius: 2px;
+  background: linear-gradient(transparent, var(--wlc-drop));
+  animation-name: wlc-fall; animation-timing-function: linear; animation-iteration-count: infinite;
+  will-change: transform;
+}
+@keyframes wlc-fall { from { transform: translateY(-22vh); } to { transform: translateY(140vh); } }
+.wlc-flash {
+  position: absolute; inset: 0;
+  background: radial-gradient(120% 90% at 30% 0%, var(--wlc-flash), transparent 60%);
+  opacity: 0; mix-blend-mode: screen; animation: wlc-flash 13s ease-in-out infinite;
+}
+@keyframes wlc-flash { 0%,7%,13%,100% { opacity: 0; } 8% { opacity: 0.45; } 9% { opacity: 0.06; } 10% { opacity: 0.5; } 12% { opacity: 0; } }
+.wlc-vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(130% 100% at 35% 35%, transparent 46%, var(--wlc-vignette) 100%);
+}
+
+/* ---- split layout ----------------------------------------------------- */
+.wlc-inner {
+  position: relative;
+  width: 100%;
+  max-width: 1080px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+  gap: clamp(44px, 6vw, 104px);
+  align-items: center;
+}
+
+/* ---- left: editorial hero -------------------------------------------- */
+.wlc-hero { text-align: start; min-width: 0; }
+.wlc-hero > * { animation: wlc-rise 0.8s ease both; }
+.wlc-hero > :nth-child(1) { animation-delay: 0.05s; }
+.wlc-hero > :nth-child(2) { animation-delay: 0.13s; }
+.wlc-hero > :nth-child(3) { animation-delay: 0.21s; }
+.wlc-hero > :nth-child(4) { animation-delay: 0.30s; }
+.wlc-hero > :nth-child(5) { animation-delay: 0.39s; }
+@keyframes wlc-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.wlc-brand { display: flex; width: fit-content; align-items: center; gap: 11px; margin-bottom: 18px; }
+.wlc-logo {
+  width: 34px; height: 34px; border-radius: 10px; object-fit: cover;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.wlc-wordmark { font-weight: 700; letter-spacing: 0.3em; font-size: 13px; color: var(--wlc-wordmark); text-indent: 0.3em; }
+
+.wlc-eyebrow {
+  display: flex; width: fit-content; flex-wrap: wrap; align-items: center; gap: 9px 9px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--wlc-eyebrow); margin-bottom: 22px;
+}
+.wlc-eyebrow-jp {
+  font-size: 13px; line-height: 1; color: var(--accent);
+  letter-spacing: 0; padding: 3px 7px; border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.wlc-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(46px, 6.4vw, 84px);
+  line-height: 0.98;
+  letter-spacing: -0.005em;
+  margin: 0 0 24px;
+  overflow-wrap: break-word;
+  color: var(--wlc-title);
+  text-shadow: 0 4px 40px var(--wlc-title-shadow);
+}
+.wlc-title em {
+  font-style: italic;
+  color: var(--accent);
+  /* faint warm halo to lift the accent word out of the rain */
+  text-shadow: 0 0 38px color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.wlc-sub {
+  font-size: clamp(15px, 1.55vw, 17px);
+  line-height: 1.62;
+  color: var(--wlc-sub);
+  max-width: 30em;
+  margin: 0 0 26px;
+}
+
+.wlc-features {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 10px 22px;
+}
+.wlc-features li {
+  position: relative;
+  font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+  color: var(--wlc-feature);
+  padding-inline-start: 18px;
+}
+.wlc-features li::before {
+  content: ''; position: absolute; inset-inline-start: 0; inset-block-start: 50%; transform: translateY(-50%);
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+.wlc-community {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  margin-top: 22px;
+  padding: 0 15px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 14%, var(--wlc-card-top));
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  box-shadow: none;
+  transition: background 0.16s var(--ease), border-color 0.16s var(--ease), transform 0.14s var(--ease);
+}
+.wlc-community:hover { background: color-mix(in srgb, var(--accent) 22%, var(--wlc-card-top)); border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
+.wlc-community:active { transform: scale(0.98); }
+.wlc-community-icon { display: inline-flex; color: var(--accent); }
+.social-link-discord {
+  color: var(--accent) !important;
+  background: var(--accent-tint) !important;
+}
+.social-link-discord:hover { background: var(--accent-tint-strong) !important; }
+
+/* ---- right: auth panel ------------------------------------------------ */
+.wlc-auth {
+  width: 100%; min-width: 0;
+  /* Opaque card — no backdrop-filter. The frosted-glass blur re-sampled the
+     animated rain behind it every frame, which made scrolling lag on desktop. */
+  background: var(--wlc-card-top);   /* flat card (was a mono gradient) */
+  border: 1px solid var(--wlc-card-border);
+  border-radius: 20px;
+  padding: 26px;
+  box-shadow: var(--wlc-card-shadow), inset 0 1px 0 var(--wlc-card-inner);
+  animation: wlc-rise 0.8s ease 0.32s both;
+}
+.wlc-auth-head {
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--wlc-head); margin: 2px 0 18px;
+}
+
+.wlc-fields { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+
+/* ---- welcome: preferences onboarding step --------------------------- */
+.wlc-prefs-stage { position: relative; z-index: 1; width: 100%; max-width: 560px; }
+.wlc-prefs {
+  width: 100%;
+  max-height: min(86vh, 780px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--wlc-card-top);
+  border: 1px solid var(--wlc-card-border);
+  border-radius: 20px;
+  padding: 28px;
+  box-shadow: var(--wlc-card-shadow), inset 0 1px 0 var(--wlc-card-inner);
+}
+.wlc-prefs-head { flex: 0 0 auto; margin-bottom: 4px; }
+.wlc-prefs-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 -6px; padding: 0 6px; }
+.wlc-prefs-kicker {
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 8px;
+}
+.wlc-prefs-title { margin: 0 0 8px; font-size: 24px; font-weight: 750; letter-spacing: -0.01em; }
+.wlc-prefs-sub { margin: 0; font-size: 14px; line-height: 1.5; color: var(--wlc-sub); }
+.wlc-prefs-loading { display: flex; justify-content: center; padding: 40px 0; }
+.wlc-prefs-section { margin-top: 22px; }
+.wlc-prefs-label {
+  font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--wlc-head); margin-bottom: 10px;
+}
+.wlc-prefs-hint { margin: -4px 0 12px; font-size: 13px; color: var(--wlc-sub); }
+.wlc-pref-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px 16px; border-radius: 14px;
+  background: var(--wlc-ghost-bg); border: 1px solid var(--wlc-ghost-border);
+}
+.wlc-pref-row-main { min-width: 0; }
+.wlc-pref-row-title { font-size: 14.5px; font-weight: 650; }
+.wlc-pref-row-sub { font-size: 12.5px; color: var(--wlc-sub); margin-top: 2px; }
+.wlc-lang-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.wlc-lang-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 13px; border-radius: 999px; cursor: pointer;
+  font-size: 13px; font-weight: 550;
+  background: var(--wlc-ghost-bg); border: 1px solid var(--wlc-ghost-border);
+  color: var(--wlc-ghost-text);
+  transition: border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+.wlc-lang-chip:hover { border-color: var(--accent); }
+.wlc-lang-chip.active {
+  background: var(--grad-accent); border-color: transparent; color: var(--on-accent);
+  box-shadow: var(--shadow-accent);
+}
+.wlc-lang-count {
+  font-size: 11px; font-weight: 700; opacity: 0.7;
+  padding: 1px 6px; border-radius: 999px;
+  background: color-mix(in srgb, currentColor 16%, transparent);
+}
+.wlc-lang-chip.active .wlc-lang-count { opacity: 0.95; }
+.wlc-prefs-tips { margin: 0; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 6px; }
+.wlc-prefs-tips li { font-size: 13px; color: var(--wlc-sub); }
+.wlc-prefs-foot {
+  flex: 0 0 auto;
+  margin-top: 18px; padding-top: 18px;
+  border-top: 1px solid var(--wlc-card-border);
+  display: flex; flex-direction: column; gap: 12px;
+}
+.wlc-prefs-count { font-size: 13px; font-weight: 600; color: var(--wlc-head); text-align: center; }
+@media (max-width: 560px) {
+  .wlc-prefs { padding: 22px 18px; border-radius: 16px; max-height: 90vh; }
+  .wlc-prefs-title { font-size: 21px; }
+}
+.wlc-input {
+  width: 100%; height: 50px;
+  padding: 0 15px;
+  border: 1px solid var(--wlc-ghost-border);
+  border-radius: 12px;
+  background: var(--wlc-ghost-bg); --autofill-surface: var(--wlc-ghost-bg);
+  color: var(--wlc-ghost-text);
+  font-size: 15px; font-weight: 500;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.wlc-input::placeholder { color: var(--wlc-sub); opacity: 0.7; }
+.wlc-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-tint-strong);
+}
+.wlc-input:disabled { opacity: 0.6; }
+
+.wlc-google {
+  width: 100%; height: 54px;
+  margin-bottom: 10px;
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  border: none; border-radius: 13px;
+  background: var(--wlc-google-bg); color: var(--wlc-google-text);
+  font-size: 15.5px; font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
+  box-shadow: var(--wlc-google-shadow);
+}
+.wlc-google:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--wlc-google-shadow-hover), 0 0 0 4px var(--accent-tint-strong);
+}
+.wlc-google:active:not(:disabled) { transform: translateY(0); }
+.wlc-google:disabled { opacity: 0.6; cursor: default; }
+.wlc-google-g { display: inline-flex; }
+.wlc-google.is-busy { color: transparent; position: relative; }
+.wlc-google.is-busy .wlc-google-g { opacity: 0; }
+.wlc-google.is-busy::after {
+  content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%;
+  border: 2.5px solid var(--wlc-google-spin-track); border-top-color: var(--wlc-google-text);
+  animation: wlc-spin 0.7s linear infinite;
+}
+@keyframes wlc-spin { to { transform: rotate(360deg); } }
+
+.wlc-or { display: flex; align-items: center; gap: 12px; margin: 20px 2px; color: var(--wlc-or); font-size: 11.5px; letter-spacing: 0.08em; text-transform: uppercase; }
+.wlc-or::before, .wlc-or::after { content: ''; flex: 1; height: 1px; background: var(--wlc-card-border); }
+
+.wlc-secondary { display: flex; flex-direction: column; gap: 10px; }
+.wlc-ghost {
+  width: 100%; min-height: 48px;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  padding: 0 16px;
+  border: 1px solid var(--wlc-ghost-border);
+  border-radius: 12px;
+  background: var(--wlc-ghost-bg);
+  color: var(--wlc-ghost-text);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, transform 0.16s ease;
+}
+.wlc-ghost:hover:not(:disabled) {
+  background: var(--wlc-ghost-bg-hover);
+  border-color: var(--wlc-ghost-border-hover);
+  transform: translateY(-1px);
+}
+.wlc-ghost:disabled { opacity: 0.5; cursor: default; }
+.wlc-ghost-ic { display: inline-flex; opacity: 0.8; }
+/* Keyboard focus rings for the bespoke welcome controls (not routed through btn()). */
+.wlc-google:focus-visible, .wlc-ghost:focus-visible, .wlc-seg-btn:focus-visible, .wlc-lang-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wlc-status { min-height: 16px; margin-top: 14px; font-size: 12.5px; text-align: center; color: var(--wlc-sub); }
+.wlc-status.is-error { color: var(--wlc-status-error); }
+.wlc-status.is-info { color: var(--wlc-status-info); }
+
+.wlc-foot { margin: 16px 0 0; font-size: 12px; line-height: 1.5; color: var(--wlc-foot); text-align: center; }
+
+/* ---- responsive ------------------------------------------------------- */
+@media (max-width: 900px) {
+  .wlc {
+    align-items: flex-start;
+    padding: max(18px, env(safe-area-inset-top)) 18px max(22px, env(safe-area-inset-bottom));
+  }
+  .wlc-inner {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 520px;
+    min-height: 100%;
+    align-content: center;
+    gap: 22px;
+  }
+  .wlc-hero { text-align: start; }
+  .wlc-brand { margin-bottom: 12px; }
+  .wlc-eyebrow { margin-bottom: 14px; letter-spacing: 0.12em; }
+  .wlc-title { margin-bottom: 16px; }
+  .wlc-sub { max-width: none; margin-bottom: 18px; font-size: 15px; line-height: 1.52; }
+  .wlc-features {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .wlc-features li {
+    min-width: 0;
+    padding: 9px 10px 9px 24px;
+    border: 1px solid var(--wlc-feature-card-border);
+    border-radius: 13px;
+    background: var(--wlc-feature-card-bg);
+    font-size: 11.5px;
+    line-height: 1.25;
+  }
+  .wlc-features li::before { inset-inline-start: 10px; }
+  .wlc-community { margin-top: 14px; min-height: 40px; }
+  .wlc-auth { padding: 22px; border-radius: 24px; }
+  .wlc-google { height: 52px; border-radius: 16px; }
+  .wlc-ghost { min-height: 46px; border-radius: 15px; }
+  .wlc-auth { animation-delay: 0.42s; }
+  /* Phones: also stop the big background animations entirely. */
+  .wlc-glow-1, .wlc-glow-2, .wlc-mist { animation: none; }
+  .wlc-flash { display: none; }
+  /* Declutter mobile: keep only a faint hint of rain, confined to the upper area
+     so the streaks never cross the auth card / feature pills. */
+  .wlc-rain { inset: -28% -28% 46% -28%; overflow: hidden; }
+  .wlc-rain.is-front { opacity: 0.26; }
+}
+@media (max-width: 460px) {
+  .wlc { padding-inline-start: 15px; padding-inline-end: 15px; }
+  .wlc-inner { gap: 18px; }
+  .wlc-wordmark { letter-spacing: 0.22em; text-indent: 0.22em; }
+  .wlc-eyebrow { gap: 7px; font-size: 10.5px; }
+  .wlc-title { font-size: clamp(36px, 11vw, 48px); line-height: 1; }
+  .wlc-sub { font-size: 14.5px; }
+  .wlc-auth { padding: 18px; }
+  .wlc-features { grid-template-columns: 1fr; }
+  .wlc-features li { min-height: 36px; display: flex; align-items: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wlc, .wlc.is-leaving, .wlc-hero > *, .wlc-auth, .wlc-glow, .wlc-mist, .wlc-drop, .wlc-flash { animation: none !important; }
+  .wlc-rain { display: none; }
+  .wlc-google { transition: none; }
+}
+
+/* Real multicolour Google logo (settings/welcome sign-in) — keep its own fills. */
+.google-mark { width: 18px; height: 18px; }
+.google-mark svg { width: 18px; height: 18px; display: block; }
+.google-mark path { stroke: none; }
+
+/* ===== Material 3 Expressive — mobile uplift (Android-like) ================= */
+@media (max-width: 760px) {
+  /* Rounder shape scale — the M3 Expressive signature. */
+  .card .cover { border-radius: 20px; }
+  .discover-rail-card .card .cover { border-radius: 18px; }
+  .discover-hero { border-radius: 30px; }
+  .discover-hero-cover { border-radius: 18px; }
+  .searchbar, .search-shell, .topbar-search input, input.search { border-radius: 999px; }
+
+  /* Expressive display headings — larger, heavier, tighter tracking. */
+  .section-header h2, .section-header .h2 { font-size: 23px; font-weight: 760; letter-spacing: -0.025em; }
+  .discover-hero-title { font-size: 24px; font-weight: 800; }
+
+  /* "Show all" → a tonal M3 chip instead of a bare accent link. */
+  .section-header .btn.btn-ghost {
+    background: var(--surface2); border: 1px solid var(--hairline);
+    border-radius: 999px; padding: 8px 16px;
+    color: var(--text-dim); font-weight: 640; font-size: 13px;
+  }
+  .section-header .btn.btn-ghost:hover { background: var(--surface3); color: var(--text); border-color: var(--border-strong); }
+
+  /* Fuller, springier primary actions (filled M3 pill). */
+  .discover-hero-actions .btn { border-radius: 999px; min-height: 46px; padding-inline: 22px; }
+  .discover-hero-actions .btn:active { transform: scale(0.96); }
+
+  /* Squishy M3 press feedback on cards. */
+  .card:active .cover { transform: scale(0.97); transition-duration: 0.12s; }
+}
+
+/* ===== Reader page-counter is tappable (jump to page) ====================== */
+.reader-bar .reader-counter { cursor: pointer; transition: color 0.15s var(--ease); }
+.reader-bar .reader-counter:hover { color: var(--accent); }
+
+/* ===== PWA install banner ================================================== */
+.install-banner {
+  position: fixed;
+  left: 50%; bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translate(-50%, 180%);
+  z-index: 120;
+  width: min(440px, calc(100vw - 24px));
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 15px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(20px) saturate(1.4);
+  -webkit-backdrop-filter: blur(20px) saturate(1.4);
+  opacity: 0;
+  transition: transform 0.34s var(--ease), opacity 0.34s var(--ease);
+}
+.install-banner.show { transform: translate(-50%, 0); opacity: 1; }
+.install-banner-icon { width: 42px; height: 42px; border-radius: 11px; flex: 0 0 auto; }
+.install-banner-text { display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0; }
+.install-banner-text strong { font-size: 14px; font-weight: 700; }
+.install-banner-text span { font-size: 12px; color: var(--text-dim); line-height: 1.35; }
+.install-banner-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+.install-banner-actions .btn { padding: 8px 14px; font-size: 13px; }
+@media (max-width: 760px) {
+  /* clear the floating tabbar pill + reading FAB */
+  .install-banner { bottom: calc(86px + env(safe-area-inset-bottom)); }
+}
+
+/* ===== Pull-to-refresh indicator ========================================== */
+.ptr-indicator {
+  position: fixed; top: 10px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  width: 40px; height: 40px; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg-elev);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-dim);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s var(--ease);
+}
+.ptr-indicator.ready { color: var(--accent); border-color: var(--accent); }
+.ptr-indicator .icon { width: 20px; height: 20px; }
+
+/* Details chapter list: last chapter (Ch 1) must clear the floating tabbar+FAB. */
+@media (max-width: 760px) {
+  .d2-chapter-scroll { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+}
+
+/* ---- in-image AI translation overlay --------------------------------- */
+/* Overlays are absolutely-positioned siblings of the page <img>; their
+   containers must be positioned for offsetLeft/Top to line up. */
+.reader.webtoon { position: relative; }
+.reader-slide { position: relative; }
+.tl-overlay { position: absolute; z-index: 4; pointer-events: none; }
+.tl-block {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  box-sizing: border-box;
+  border-radius: 10px;
+  padding: 2px 4px;
+  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Segoe Print', 'Comic Neue', cursive, sans-serif;
+  font-weight: 600;
+  line-height: 1.18;
+  /* NEVER split a word. `hyphens: auto` + `overflow-wrap: anywhere` let the
+     browser letter "remember" as "remem-/ber", and worse, it made the fitter
+     think the text fit at a large size instead of shrinking it — real lettering
+     shrinks to fit whole words. word-break: normal still lets CJK wrap between
+     characters, which is correct for those targets. fitAll() re-enables
+     breaking per block only if a word can't fit even at the minimum size. */
+  word-break: normal;
+  overflow-wrap: normal;
+  text-wrap: balance;
+  hyphens: none;
+}
+.tl-block.tl-pending {
+  background: rgba(128, 128, 255, 0.10);
+  outline: 1px dashed rgba(150, 150, 255, 0.45);
+  border-radius: 8px;
+}
+
+/* ---- settings hub (Android-style preference screens) ------------------ */
+.settings-nav { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.settings-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  background: var(--surface-grad, var(--surface1));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 14px);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease), transform 0.15s var(--ease);
+}
+.settings-nav-row:hover { border-color: var(--accent); transform: translateX(2px); }
+.settings-nav-row:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.settings-nav-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px; height: 40px;
+  flex: 0 0 auto;
+  border-radius: 12px;
+  background: var(--surface2);
+  color: var(--accent);
+}
+.settings-nav-row .row-main { flex: 1; min-width: 0; }
+.settings-nav-row .name { font-weight: 700; font-size: 14px; }
+.settings-nav-row .sub { color: var(--text-dim); font-size: 12px; margin-top: 2px; }
+.settings-nav-chevron { color: var(--text-faint); display: inline-flex; flex: 0 0 auto; }
+.settings-subheader { display: flex; align-items: center; gap: 12px; margin: 4px 0 18px; }
+.settings-subheader h1 { font-size: 22px; font-weight: 800; margin: 0; }
+
+/* Themed <select class="input"> (reader translate modal + settings pages). */
+select.input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--surface2); --autofill-surface: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 32px 8px 12px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2.4'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+select.input:focus { border-color: var(--accent); outline: none; }
+select.input option { background: var(--surface1); color: var(--text); }
+
+/* Per-page translation status pill (top-right of the page). */
+.tl-progress {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(12, 12, 18, 0.78);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+.tl-progress::before {
+  content: '';
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  animation: reader-spin 0.8s linear infinite;
+}
+
+/* Overlay visibility toggle — peek at the original page. */
+.reader-view.tl-hidden .tl-overlay { display: none; }
+
+/* ---- Material 3 range sliders (reader settings) ----------------------- */
+input.m3-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 36px;
+  margin: 2px 0;
+  background: transparent;
+  cursor: pointer;
+}
+input.m3-range::-webkit-slider-runnable-track {
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(to right,
+    var(--accent) var(--p, 50%),
+    color-mix(in srgb, var(--accent) 16%, var(--surface2)) var(--p, 50%));
+}
+input.m3-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 6px;
+  height: 30px;
+  margin-top: -8px;
+  border: none;
+  border-radius: 4px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--surface1); /* the M3 handle gap */
+  transition: transform 0.12s var(--ease);
+}
+input.m3-range:active::-webkit-slider-thumb { transform: scaleY(1.12); }
+input.m3-range:focus-visible { outline: none; }
+input.m3-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--surface1), 0 0 0 7px color-mix(in srgb, var(--accent) 30%, transparent); }
+input.m3-range::-moz-range-track {
+  height: 14px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface2));
+}
+input.m3-range::-moz-range-progress {
+  height: 14px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+input.m3-range::-moz-range-thumb {
+  width: 6px;
+  height: 30px;
+  border: none;
+  border-radius: 4px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--surface1);
+}
+
+/* ---- Material 3 dialog polish ----------------------------------------- */
+.modal {
+  border: none;
+  border-radius: 28px;
+  box-shadow:
+    0 6px 16px color-mix(in srgb, #000 24%, transparent),
+    0 28px 72px color-mix(in srgb, #000 36%, transparent);
+}
+.modal-head h3 { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
+.modal .settings-section h2 {
+  font-size: 12.5px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 14px;
+}
+.modal-actions { padding: 10px 22px 22px; }
+.modal-actions .btn { border-radius: 999px; }
+.modal-body {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 45%, var(--surface3)) transparent;
+}
+.modal-body::-webkit-scrollbar { width: 8px; }
+.modal-body::-webkit-scrollbar-track { background: transparent; }
+.modal-body::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 40%, var(--surface3));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* ---- Material scrollbar for the webtoon reader ------------------------ */
+.reader.webtoon {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--accent) 55%, var(--surface3)) transparent;
+}
+.reader.webtoon::-webkit-scrollbar { width: 10px; }
+.reader.webtoon::-webkit-scrollbar-track { background: transparent; }
+.reader.webtoon::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 50%, var(--surface3));
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+/* ---- Material 3 filter chips (reader settings presets) ---------------- */
+.modal .chips { gap: 10px; margin-top: 4px; }
+.modal .chips .chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 20px;
+  border-radius: 12px;
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease), color 0.15s var(--ease);
+}
+.modal .chips .chip:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  border-color: var(--accent);
+  color: var(--text);
+}
+.modal .chips .chip.active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: transparent;
+  color: var(--text);
+  font-weight: 700;
+}
+.modal .chips .chip.active::before {
+  content: '✓';
+  margin-inline-end: 8px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.modal .chips .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* In the reader, toasts must not cover the floating top bars — show them as a
+   bottom snackbar above the page pill instead. */
+body.reader-active .toast {
+  inset-block-start: auto;
+  inset-block-end: calc(84px + env(safe-area-inset-bottom));
+}
+
+/* =====================================================================
+   Material 3 sweep — shared primitives, so every screen inherits it.
+   ===================================================================== */
+
+/* Buttons: default = filled tonal pill; accent = filled; ghost = text button. */
+.btn {
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface1));
+}
+.btn:hover {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface1));
+  border-color: transparent;
+}
+.btn.btn-accent { border-radius: 999px; }
+.btn.btn-ghost { background: transparent; }
+.btn.btn-ghost:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); border-color: transparent; }
+.btn.btn-danger { background: transparent; }
+.btn:active { transform: scale(0.97); }
+
+/* Segmented controls: M3 connected button group. */
+.seg { border-radius: 999px; padding: 4px; }
+.seg button { border-radius: 999px; }
+.seg button.active {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  color: var(--text);
+  box-shadow: none;
+}
+
+/* Chips app-wide: taller, softer, tonal when active. */
+.chip {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 10px;
+  padding: 4px 14px;
+}
+.chip.active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: transparent;
+  color: var(--text);
+  font-weight: 650;
+}
+
+/* Text fields: M3 filled style with a rounded container. */
+.field input[type="text"], .field input[type="number"], .field input[type="password"],
+.field input[type="email"], .field input[type="url"], .field input[type="search"], .field input:not([type]),
+.field select, .field textarea, input.field, select.field, input.input, select.input {
+  border-radius: 12px;
+}
+.search-form input { background: color-mix(in srgb, var(--accent) 6%, var(--surface1)); --autofill-surface: color-mix(in srgb, var(--accent) 6%, var(--surface1)); }
+
+/* Switch: M3 proportions — outlined track when off, filled when on. */
+.switch { width: 52px; height: 32px; flex: 0 0 52px; }
+.switch .slider { background: var(--surface2); border: 2px solid var(--border-strong); box-sizing: border-box; }
+.switch .slider::before {
+  width: 16px; height: 16px;
+  inset-inline-start: 6px; inset-block-start: 6px;
+  background: var(--text-dim);
+  box-shadow: none;
+}
+.switch input:checked + .slider { border-color: transparent; }
+.switch input:checked + .slider::before {
+  width: 24px; height: 24px;
+  inset-inline-start: 2px; inset-block-start: 2px;
+  transform: translateX(22px);
+  background: var(--pure-white);
+}
+
+/* Toast → M3 snackbar voice: tonal elevated pill (position handled above). */
+.toast { border: none; box-shadow: 0 4px 12px color-mix(in srgb, #000 30%, transparent), 0 12px 32px color-mix(in srgb, #000 22%, transparent); }
+
+/* Thin, rounded, accent-tinted scrollbars everywhere. */
+* { scrollbar-width: thin; scrollbar-color: color-mix(in srgb, var(--accent) 40%, var(--surface3)) transparent; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 40%, var(--surface3));
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner { background: transparent; }
+
+/* ---- Material list rows + linear progress (history/updates/downloads) - */
+.row-item {
+  border: none;
+  border-radius: 16px;
+  background: var(--surface1);
+  transition: background 0.15s var(--ease), transform 0.1s var(--ease);
+}
+.row-item:hover {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface1));
+}
+.row-item .thumb { border-radius: 10px; }
+.progress {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface2));
+}
+.progress > span { border-radius: 999px; background: var(--accent); }
+/* icon buttons app-wide: M3 circular */
+.icon-btn { border-radius: 999px; }
+
+/* Monogram tile when a list row has no cover art. */
+.thumb-fallback {
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  font-size: 18px;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface2));
+}
+
+/* ---- Material cards: elevation instead of hairline borders ------------ */
+.card .cover {
+  border: none;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px color-mix(in srgb, #000 16%, transparent), 0 1px 2px color-mix(in srgb, #000 10%, transparent);
+}
+.card:hover .cover {
+  border-color: transparent;
+  box-shadow: 0 8px 20px color-mix(in srgb, #000 26%, transparent), 0 3px 8px color-mix(in srgb, #000 14%, transparent);
+}
+.card:focus-visible .cover { box-shadow: 0 0 0 2px var(--accent), 0 4px 14px color-mix(in srgb, #000 20%, transparent); }
+.stat-card { border: none; border-radius: 16px; box-shadow: 0 1px 3px color-mix(in srgb, #000 14%, transparent); }
+.settings-nav-row { border: none; box-shadow: 0 1px 3px color-mix(in srgb, #000 12%, transparent); }
+.settings-nav-row:hover { box-shadow: 0 4px 12px color-mix(in srgb, #000 18%, transparent); background: color-mix(in srgb, var(--accent) 6%, var(--surface1)); }
+
+/* ---- Material dropdown (menuSelect) ------------------------------------ */
+.menu-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 8px 12px 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface1);
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+.menu-select:hover { background: color-mix(in srgb, var(--accent) 8%, var(--surface1)); border-color: var(--accent); }
+.menu-select .icon { transform: rotate(90deg); color: var(--text-faint); }
+.menu-select .icon svg { width: 16px; height: 16px; }
+.menu-select-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.menu-select-pop {
+  z-index: 400;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: min(420px, 60vh);
+  overflow-y: auto;
+  padding: 8px;
+  border-radius: 18px;
+  background: var(--bg-elev);
+  box-shadow:
+    0 4px 12px color-mix(in srgb, #000 24%, transparent),
+    0 16px 44px color-mix(in srgb, #000 32%, transparent);
+}
+.menu-select-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px 10px 10px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 550;
+  text-align: start;
+  cursor: pointer;
+  transition: background 0.12s var(--ease);
+}
+.menu-select-item:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.menu-select-item.active { background: color-mix(in srgb, var(--accent) 16%, transparent); font-weight: 700; }
+.menu-select-check { width: 18px; height: 18px; flex: 0 0 18px; display: grid; place-items: center; color: var(--accent); }
+.menu-select-check .icon svg { width: 16px; height: 16px; }
+
+/* ---- Material top app bar --------------------------------------------- */
+.topbar { border-bottom: none; }
+.search-form input {
+  height: 46px;
+  border: none;
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface1)); --autofill-surface: color-mix(in srgb, var(--accent) 7%, var(--surface1));
+  font-size: 14px;
+}
+.search-form input:focus {
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface1)); --autofill-surface: color-mix(in srgb, var(--accent) 12%, var(--surface1));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* Appearance prefs: card titles + reduced motion. */
+body.hide-card-titles .card .title { display: none; }
+body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after {
+  transition-duration: 0.01ms !important;
+  animation-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ---- appearance options ------------------------------------------------ */
+/* Soft dark: M3-style grey dark surfaces instead of pure black. */
+html.soft-dark[data-theme="DARK"] {
+  --bg: #111116;
+  --bg-elev: #17171c;
+  --surface1: #1c1c22;
+  --surface2: #26262d;
+  --surface3: #303038;
+}
+/* Disable backdrop blur (low-power devices). */
+body.no-blur *, body.no-blur *::before, body.no-blur *::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+/* Icon-only navigation rail (desktop). */
+@media (min-width: 761px) {
+  body.nav-rail .sidebar { width: 84px; flex-basis: 84px; padding: 18px 10px; }
+  body.nav-rail .brand span { display: none; }
+  body.nav-rail .brand { justify-content: center; padding-inline: 0; }
+  body.nav-rail .nav-label { height: 0; padding: 8px 0 0; margin-top: 8px; overflow: hidden; color: transparent; }
+  body.nav-rail .nav-item { justify-content: center; padding: 9px 0; gap: 0; }
+  body.nav-rail .nav-item span:not(.icon) { display: none; }
+}
+/* Custom accent color swatch (settings). */
+.accent-picker {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid var(--border-strong);
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+.accent-picker::-webkit-color-swatch-wrapper { padding: 3px; }
+.accent-picker::-webkit-color-swatch { border: none; border-radius: 50%; }
+.accent-picker::-moz-color-swatch { border: none; border-radius: 50%; }
+
+/* ---- Material 3 Expressive phone chrome (Android 16/17 style) --------- */
+.discover-hero {
+  border: none;
+  border-radius: 28px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, var(--bg-elev)), var(--bg-elev) 70%);
+}
+.discover-hero-cover { border: none; border-radius: 18px; }
+
+@media (max-width: 760px) {
+  /* Top-row actions as tonal circles. */
+  .nav-toggle, .mobile-search-action {
+    width: 44px; height: 44px; flex-basis: 44px;
+    border: none; border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 10%, var(--surface1));
+  }
+  .nav-toggle:active, .mobile-search-action:active {
+    background: color-mix(in srgb, var(--accent) 20%, var(--surface1));
+  }
+
+  /* Navigation bar: M3E active indicator — a tonal capsule around the ICON,
+     bold label beneath. */
+  .tabbar-pill { padding: 10px 8px; border: none; }
+  .tabbar-pill a { gap: 4px; font-size: 11px; font-weight: 600; background: transparent; }
+  .tabbar-pill a .icon {
+    width: auto; height: auto;
+    padding: 5px 18px;
+    border-radius: 999px;
+    transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.18s var(--ease);
+  }
+  .tabbar-pill a .icon svg { width: 22px; height: 22px; }
+  .tabbar-pill a.active { background: transparent; color: var(--text); font-weight: 800; }
+  .tabbar-pill a.active .icon {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: var(--accent);
+  }
+
+  /* FAB: M3E large-corner square. */
+  .tabbar-fab { border-radius: 20px; }
+}
+
+/* ---- kill browser-native touch chrome (Material replaces it) ---------- */
+* { -webkit-tap-highlight-color: transparent; }
+img, .card, .card .cover, .reader-page, .thumb {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+.card, .nav-item, .chip, .btn, .tabbar-pill a, .seg button, .row-item {
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.ctx-menu .menu-select-item.danger { color: var(--danger, #e5484d); }
+.ctx-menu .menu-select-item.danger .menu-select-check { color: var(--danger, #e5484d); }
+
+/* ---- Material card redesign: elevated container, image + title inside - */
+.card {
+  background: var(--surface1);
+  border-radius: 20px;
+  overflow: hidden;
+  gap: 0;
+  box-shadow: 0 1px 3px color-mix(in srgb, #000 16%, transparent), 0 1px 2px color-mix(in srgb, #000 10%, transparent);
+  transition: transform 0.28s var(--ease), box-shadow 0.28s var(--ease);
+}
+.card .cover {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  transition: none;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 24px color-mix(in srgb, #000 26%, transparent), 0 3px 8px color-mix(in srgb, #000 14%, transparent);
+}
+.card:hover .cover { transform: none; box-shadow: none; border-color: transparent; }
+.card:active { transform: translateY(-1px) scale(0.985); }
+.card:active .cover { transform: none; }
+.card:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent), 0 6px 16px color-mix(in srgb, #000 22%, transparent); }
+.card:focus-visible .cover { box-shadow: none; border-color: transparent; }
+.card .title {
+  padding: 10px 12px 12px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+body.hide-card-titles .card { background: transparent; box-shadow: none; overflow: visible; }
+body.hide-card-titles .card .cover {
+  border-radius: 20px;
+  box-shadow: 0 1px 3px color-mix(in srgb, #000 16%, transparent);
+}
+
+/* ---- card fixes: clamp-safe title, softer elevation, scrim chips ------ */
+/* line-clamped boxes leak clipped lines into bottom PADDING — keep the
+   bottom space as margin instead. */
+.card .title {
+  padding: 10px 12px 0;
+  margin-bottom: 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* softer resting elevation (light theme was reading as a grey halo) */
+.card {
+  box-shadow: 0 1px 2px color-mix(in srgb, #000 10%, transparent), 0 1px 3px color-mix(in srgb, #000 6%, transparent);
+}
+/* genre/score chips overlaid on the cover: scrim style, not paper squares */
+.card .chips { gap: 6px; }
+.card .chips .chip {
+  min-height: 26px;
+  padding: 2px 12px;
+  font-size: 11px;
+  font-weight: 650;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, #0c0c12 62%, transparent);
+  color: #fff;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+/* rails: equal-height cards */
+.discover-rail-track { align-items: stretch; }
+.discover-rail-card .card { height: 100%; }
+
+/* ---- Material loading state for covers (no more pure-black tiles) ----- */
+.card .cover {
+  background: linear-gradient(150deg,
+    color-mix(in srgb, var(--accent) 10%, var(--surface2)),
+    var(--surface2) 65%);
+}
+.card .cover::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(100deg,
+    transparent 32%,
+    color-mix(in srgb, var(--accent) 12%, transparent) 50%,
+    transparent 68%);
+  transform: translateX(-100%);
+  animation: shimmer 1.5s infinite;
+  pointer-events: none;
+}
+.card .cover.img-loaded::before { display: none; animation: none; }
+.card .cover-media { position: relative; z-index: 1; }
+.cover-fallback {
+  background: linear-gradient(150deg,
+    color-mix(in srgb, var(--accent) 14%, var(--surface2)),
+    var(--surface2));
+  color: var(--accent);
+  z-index: 1;
+}
+.row-item .thumb { background: color-mix(in srgb, var(--accent) 10%, var(--surface2)); }
+/* reader page slots: tonal instead of flat surface */
+.reader.webtoon .reader-page { background: color-mix(in srgb, var(--accent) 6%, var(--surface1)); }
+.reader.webtoon .reader-page.loaded { background: none; }
+
+/* Skeletons: tonal Material shimmer, never pure black. */
+.skeleton {
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface2)) !important;
+}
+.skeleton::after {
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 16%, var(--skeleton-shimmer)),
+    transparent);
+}
+
+/* search filter row: quiet M3 label + menu trigger */
+.search-filters { display: flex; align-items: center; gap: 12px; margin: 4px 0 16px; }
+.search-filters-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ---- Material 3 welcome / onboarding ---------------------------------- */
+.wlc-auth, .wlc-prefs {
+  border: none;
+  border-radius: 28px;
+  box-shadow:
+    0 6px 16px color-mix(in srgb, #000 22%, transparent),
+    0 28px 72px color-mix(in srgb, #000 34%, transparent);
+}
+.wlc-auth-head, .wlc-prefs-kicker {
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  font-weight: 800;
+}
+.wlc-input {
+  height: 52px;
+  border: none;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface2)); --autofill-surface: color-mix(in srgb, var(--accent) 7%, var(--surface2));
+  color: var(--text);
+}
+.wlc-input:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+/* Primary action → filled accent pill */
+.wlc-google {
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.wlc-google:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 38%, transparent);
+  filter: brightness(1.05);
+}
+.wlc-google.is-busy::after { border-top-color: var(--on-accent); }
+/* Secondary actions → tonal pills */
+.wlc-ghost {
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface1));
+  color: var(--text);
+}
+.wlc-ghost:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 18%, var(--surface1));
+  transform: none;
+}
+
+/* The welcome stage is always dark — pin its fields/pills to dark surfaces so
+   the light theme doesn't leak pale tokens onto the dark card. */
+.wlc-input {
+  background: color-mix(in srgb, var(--accent) 8%, #1b1b21); --autofill-surface: color-mix(in srgb, var(--accent) 8%, #1b1b21);
+  color: #f2f2f5;
+}
+.wlc-input::placeholder { color: #9a9aa3; opacity: 1; }
+.wlc-ghost {
+  background: color-mix(in srgb, var(--accent) 12%, #191920);
+  color: #ececf1;
+}
+.wlc-ghost:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 20%, #191920); }
+
+/* onboarding: appearance picks (theme segmented + accent swatches) */
+.wlc-theme-seg {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #17171d;
+  margin-bottom: 14px;
+}
+.wlc-seg-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 8px 18px;
+  background: transparent;
+  color: #a6a6b0;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 0.15s var(--ease), color 0.15s var(--ease);
+}
+.wlc-seg-btn.active {
+  background: color-mix(in srgb, var(--accent) 24%, #17171d);
+  color: #fff;
+}
+.wlc-swatches { display: flex; flex-wrap: wrap; gap: 12px; }
+.wlc-swatch {
+  width: 34px;
+  height: 34px;
+  border: none;
+  border-radius: 50%;
+  background: var(--sw);
+  cursor: pointer;
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+  box-shadow: 0 0 0 2px color-mix(in srgb, #fff 14%, transparent);
+}
+.wlc-swatch:hover { transform: scale(1.12); }
+.wlc-swatch.active {
+  box-shadow: 0 0 0 3px #0f0f14, 0 0 0 6px var(--sw);
+  transform: scale(1.05);
+}
+
+/* ---- welcome: LIGHT theme variant — picking "Light" during onboarding
+   must visibly transform the screen, not just the app behind it. ---------- */
+:root {
+  --wlc-field: #1b1b21;
+  --wlc-field-text: #f2f2f5;
+  --wlc-field-ph: #9a9aa3;
+  --wlc-tonal: #191920;
+  --wlc-tonal-text: #ececf1;
+  --wlc-seg: #17171d;
+}
+:root[data-theme="LIGHT"] {
+  --wlc-text: #1c1c21;
+  --wlc-sky-1: #f4f4f6;
+  --wlc-sky-2: #ececef;
+  --wlc-sky-3: #e2e2e6;
+  --wlc-mist-1: rgba(0, 0, 0, 0.04);
+  --wlc-mist-2: rgba(0, 0, 0, 0.03);
+  --wlc-drop: rgba(0, 0, 0, 0.26);
+  --wlc-flash: rgba(255, 255, 255, 0.7);
+  --wlc-vignette: rgba(255, 255, 255, 0.35);
+  --wlc-wordmark: #232327;
+  --wlc-eyebrow: #6b6b72;
+  --wlc-title: #141418;
+  --wlc-title-shadow: rgba(255, 255, 255, 0.45);
+  --wlc-sub: #4c4c55;
+  --wlc-feature: #63636b;
+  --wlc-card-top: rgba(255, 255, 255, 0.97);
+  --wlc-card-bottom: rgba(250, 250, 252, 0.95);
+  --wlc-card-border: rgba(0, 0, 0, 0.10);
+  --wlc-card-shadow: 0 30px 80px rgba(0, 0, 0, 0.16);
+  --wlc-card-inner: rgba(255, 255, 255, 0.65);
+  --wlc-head: #74747c;
+  --wlc-or: #8a8a92;
+  --wlc-ghost-border: rgba(0, 0, 0, 0.12);
+  --wlc-ghost-border-hover: rgba(0, 0, 0, 0.22);
+  --wlc-ghost-bg: rgba(0, 0, 0, 0.04);
+  --wlc-ghost-bg-hover: rgba(0, 0, 0, 0.08);
+  --wlc-ghost-text: #26262c;
+  --wlc-status-error: #c62f38;
+  --wlc-foot: #84848c;
+  --wlc-feature-card-border: rgba(0, 0, 0, 0.08);
+  --wlc-feature-card-bg: rgba(0, 0, 0, 0.03);
+  --wlc-field: #ececf0;
+  --wlc-field-text: #1d1d22;
+  --wlc-field-ph: #75757e;
+  --wlc-tonal: #e9e9ef;
+  --wlc-tonal-text: #232329;
+  --wlc-seg: #e6e6eb;
+}
+/* Re-point the pinned components at the theme tokens. */
+.wlc-input {
+  background: color-mix(in srgb, var(--accent) 8%, var(--wlc-field)); --autofill-surface: color-mix(in srgb, var(--accent) 8%, var(--wlc-field));
+  color: var(--wlc-field-text);
+}
+.wlc-input::placeholder { color: var(--wlc-field-ph); }
+.wlc-ghost {
+  background: color-mix(in srgb, var(--accent) 12%, var(--wlc-tonal));
+  color: var(--wlc-tonal-text);
+}
+.wlc-ghost:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 20%, var(--wlc-tonal)); }
+.wlc-theme-seg { background: var(--wlc-seg); }
+.wlc-seg-btn { color: var(--wlc-sub); }
+.wlc-seg-btn.active {
+  background: color-mix(in srgb, var(--accent) 24%, var(--wlc-seg));
+  color: var(--wlc-text);
+}
+.wlc-swatch { box-shadow: 0 0 0 2px var(--wlc-card-border); }
+.wlc-swatch.active { box-shadow: 0 0 0 3px var(--wlc-card-top), 0 0 0 6px var(--sw); }
+
+/* onboarding scheme cards: wrap instead of horizontal scroll */
+.wlc-scheme-cards { flex-wrap: wrap; overflow: visible; margin-bottom: 4px; }
+
+/* Calmer loading shimmer: slower sweep, softer highlight, gentle pause. */
+.card .cover::before {
+  background: linear-gradient(100deg,
+    transparent 36%,
+    color-mix(in srgb, var(--accent) 7%, transparent) 50%,
+    transparent 64%);
+  animation: shimmer 3s ease-in-out infinite;
+}
+.skeleton::after {
+  animation-duration: 2.8s;
+  animation-timing-function: ease-in-out;
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 9%, var(--skeleton-shimmer)),
+    transparent);
+}
+
+/* Checked switch thumb must contrast the accent track (white-accent schemes
+   like Kanade/Yuki made a white thumb invisible on a white track). */
+.switch input:checked + .slider::before {
+  background: var(--on-accent);
+}
+
+/* ---- Material 3 filled text field (standalone input.input) ------------- */
+input.input {
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface1)); --autofill-surface: color-mix(in srgb, var(--accent) 6%, var(--surface1));
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+input.input::placeholder { color: var(--text-faint); }
+input.input:hover { border-color: var(--border-strong); }
+input.input:focus {
+  outline: none;
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface1)); --autofill-surface: color-mix(in srgb, var(--accent) 10%, var(--surface1));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* ---- info dot (circled "!") + Material tooltip ------------------------- */
+.setting-row .name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.info-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s var(--ease);
+}
+.info-dot:hover { background: color-mix(in srgb, var(--accent) 34%, transparent); }
+.info-dot-glyph { font-size: 12px; font-weight: 800; line-height: 1; font-family: Georgia, 'Times New Roman', serif; }
+.info-tip {
+  position: fixed;
+  z-index: 500;
+  max-width: 300px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 12.5px;
+  line-height: 1.5;
+  box-shadow:
+    0 4px 12px color-mix(in srgb, #000 24%, transparent),
+    0 12px 32px color-mix(in srgb, #000 30%, transparent);
+}
+
+/* ---- Clean Material loading: one calm pulse, no clipped shimmer sweep ---
+   The diagonal highlight band was getting clipped by rounded corners into a
+   harsh white "swoosh", and covers doubled it (cover ::before + skeleton
+   ::after). Kill both sweeps; use a gentle tonal opacity pulse everywhere. */
+@keyframes fx-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+
+.card .cover::before { display: none !important; animation: none !important; }
+.skeleton::after { display: none !important; animation: none !important; }
+
+/* Static tonal loading state — no pulsing/breathing on covers or skeletons. */
+.skeleton { animation: none; }
+.card .cover:not(.img-loaded) { animation: none; }
+.card .cover.img-loaded { animation: none; }
+
+
+
+/* ======================================================================== */
+/* Material You card — built on <md-elevated-card> (Material Web).           */
+/* We only theme the component's public tokens + lay out cover/title inside. */
+/* ======================================================================== */
+.card {
+  /* Material Web elevated-card tokens */
+  --md-elevated-card-container-color: var(--surface3);
+  --md-elevated-card-container-shape: 16px;
+  --md-elevated-card-container-elevation: 2;
+  /* Shadow picks up the current accent so cards glow in the theme colour. */
+  --md-elevated-card-container-shadow-color: var(--accent);
+  /* Force block over the component's shadow :host{display:flex} (equal specificity
+     otherwise lets the shadow win). As a flex item the title got min-height:auto
+     (= content height) and -webkit-box blockified to flow-root, so it spilled to a
+     3rd line; as a block child the 2-line -webkit-box clamp works. */
+  display: block !important;
+  /* the component draws its own surface + elevation; neutralise legacy card box */
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding: 0;
+  overflow: visible;
+  cursor: pointer;
+  transition: transform .2s var(--ease);
+}
+:root[data-theme="LIGHT"] .card { --md-elevated-card-container-color: #ffffff; }
+.card:hover { --md-elevated-card-container-elevation: 4; transform: translateY(-3px); }
+.card:active { transform: translateY(-1px); }
+.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* content wrapper (not slotted directly) so the title's overflow clips reliably
+   and the whole body rounds to the card shape. */
+.card .card-body {
+  display: block;
+  border-radius: inherit;
+  overflow: hidden;
+}
+/* cover fills the top of the card with matching top corners */
+.card .cover {
+  position: relative;
+  aspect-ratio: 2 / 3;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  background: var(--surface2);
+}
+.card .cover img, .card .cover .cover-media {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+.card .cover .cover-chips, .card .cover .chips { z-index: 2; }
+.card .cover .badge { z-index: 2; }
+
+/* title sits on the card surface, padded like a Material card body. Pure legacy
+   -webkit-box clamp (NOT the standard line-clamp, which flips the used display to
+   flow-root and stops the 3rd line from being visually clipped). Two lines max. */
+.card .title {
+  /* NOTE: bottom spacing is MARGIN, not padding. overflow:hidden clips at the
+     padding-box, so any bottom padding becomes a gap the clipped 3rd line shows
+     through. The box height is exactly top-padding + two line-boxes, so the clip
+     lands precisely at the end of line 2 and the 3rd line is fully removed. */
+  padding: 9px 12px 0;
+  margin: 0 0 12px;
+  font-size: 12.8px; font-weight: 600; line-height: 1.3; letter-spacing: -.005em;
+  color: var(--text);
+  /* Plain block, fixed to exactly two line-boxes + top padding, overflow:hidden.
+     -webkit-line-clamp is avoided on purpose: in the md-card shadow context it
+     computes to flow-root and paints its discarded 3rd line through every clip.
+     A clean height-clip (no … ellipsis) is the reliable 2-line cap. */
+  display: block;
+  height: calc(1.3em * 2 + 9px);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* ---- Downloads: offline-storage summary strip -------------------------- */
+.dl-storage {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 14px 16px; margin: 6px 0 22px;
+  background: var(--surface1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 2px color-mix(in srgb, #000 8%, transparent);
+}
+.dl-storage-main { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.dl-storage-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 42px; height: 42px; flex: 0 0 auto; border-radius: 12px;
+  background: var(--accent-tint); color: var(--accent);
+}
+.dl-storage-icon svg { width: 20px; height: 20px; }
+.dl-storage-text { min-width: 0; }
+.dl-storage-title { font-weight: 650; font-size: 14px; color: var(--text); }
+.dl-storage-sub { color: var(--text-dim); font-size: 12.5px; margin-top: 2px; }
+.dl-storage-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+@media (max-width: 560px) {
+  .dl-storage { gap: 12px; }
+  .dl-storage-actions { width: 100%; }
+  .dl-storage-actions .btn { flex: 1 1 0; justify-content: center; }
+}
+
+/* ---- Settings → Experimental ------------------------------------------ */
+.experimental .exp-banner {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 16px; margin: 4px 0 10px; border-radius: var(--radius);
+  background: var(--surface1); border: 1px solid var(--border);
+  transition: border-color .2s var(--ease), background .2s var(--ease);
+}
+.experimental .exp-banner.on {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 7%, var(--surface1));
+}
+.exp-banner-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; flex: 0 0 auto; border-radius: 13px;
+  background: var(--accent-tint); color: var(--accent);
+}
+.exp-banner-icon svg { width: 22px; height: 22px; }
+.exp-banner-text { flex: 1 1 220px; min-width: 0; }
+.exp-banner-title { font-weight: 700; font-size: 15px; color: var(--text); }
+.exp-banner-sub { color: var(--text-dim); font-size: 12.5px; margin-top: 3px; line-height: 1.5; }
+
+.exp-hint {
+  margin: 2px 0 6px; padding: 11px 14px; border-radius: var(--radius-sm);
+  background: var(--accent-tint-soft); color: var(--text-dim);
+  font-size: 12.5px; line-height: 1.5;
+}
+.exp-body { margin-top: 6px; transition: opacity .2s var(--ease); }
+.exp-body.is-off { opacity: 0.45; pointer-events: none; user-select: none; }
+
+.exp-h2 {
+  display: flex; align-items: center; gap: 9px;
+  margin: 30px 0 10px; font-size: 16px; font-weight: 700; color: var(--text);
+}
+.exp-h2:first-child { margin-top: 8px; }
+.exp-h2-icon { display: inline-flex; color: var(--accent); }
+.exp-h2-icon svg { width: 18px; height: 18px; }
+.exp-h3 {
+  margin: 22px 0 6px; font-size: 11.5px; font-weight: 700; color: var(--text-faint);
+  text-transform: uppercase; letter-spacing: .05em;
+}
+
+/* Experimental: recursive nav rows + colorization note */
+.settings-nav-row.is-disabled { opacity: 0.5; pointer-events: none; }
+.exp-nav { margin-top: 4px; }
+.exp-note { margin: 8px 0 4px; font-size: 12.5px; color: var(--text-dim); line-height: 1.55; max-width: 560px; }
+
+/* Experimental → Colorization: locked toggle + model download progress */
+.setting-row.is-locked .row-actions { opacity: 0.45; }
+.exp-model-row .row-main { min-width: 0; flex: 1 1 auto; }
+.exp-dl-bar {
+  display: block; width: 100%; max-width: 420px; height: 6px; margin-top: 10px;
+  border-radius: 999px; overflow: hidden; position: relative;
+  background: color-mix(in srgb, var(--text) 12%, transparent);
+}
+.exp-dl-bar > span {
+  display: block; height: 100%; width: 0;
+  border-radius: 999px; background: var(--accent);
+  transition: width 0.2s var(--ease);
+}
+
+/* Colorization model: explicit download + locked toggle until it's cached */
+.setting-row.is-locked .row-actions { opacity: 0.45; }
+.exp-dl-bar { width: 100%; max-width: 460px; margin-top: 10px; }
+
+/* ---- What's new (changelog) dialog ------------------------------------- */
+.changelog-version {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 16px;
+}
+.changelog-item {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 12px 0;
+}
+.changelog-item + .changelog-item { border-top: 1px solid var(--divider); }
+.changelog-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+}
+.changelog-icon .icon { width: 19px; height: 19px; }
+.changelog-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.changelog-desc { font-size: 13px; line-height: 1.55; color: var(--text-dim); }

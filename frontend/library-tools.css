@@ -1,0 +1,71 @@
+/* Desktop Library: reading first, then collection and local controls. */
+.library-header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.library-header .section-actions { margin-right: auto; }
+.library-result-count { color: var(--text-dim) !important; }
+.library-subnav { display: flex; gap: 2px; align-items: center; }
+.library-subnav .btn { min-height: 36px; padding: 6px 10px; font-size: 12px; }
+.library-tab-row[hidden], .library-tools[hidden], .library-filter-row[hidden],
+.library-filter-panel [hidden], .library-resume-art img[hidden] { display: none !important; }
+.library-filter-row { margin-bottom: 12px !important; gap: 8px; }
+.library-tools { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.library-tools > input { flex: 1; min-width: 100px; }
+.library-tools .input { min-height: 40px; box-sizing: border-box; font: inherit; font-size: 13px; border-radius: 8px; }
+.library-sort-row { margin: 0 !important; flex: 0 0 auto; }
+.library-sort-select { width: 152px; }
+.library-filter-disclosure { position: relative; flex: 0 0 auto; }
+.library-filter-toggle { list-style: none; min-height: 40px; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 14px; border: 1px solid var(--border); background: var(--surface1); border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
+.library-filter-toggle::-webkit-details-marker { display: none; }
+.library-filter-toggle::after { content: '⌄'; font-size: 14px; }
+.library-filter-disclosure[open] .library-filter-toggle { border-color: var(--accent); }
+.library-filter-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 12; display: flex; flex-direction: column; gap: 14px; width: 280px; max-width: calc(100vw - 64px); padding: 18px; background: var(--surface1); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 36px #0003; }
+.library-tools-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.library-tools-field > span { color: var(--text-dim); font-size: 12px; font-weight: 600; }
+.library-tools-field .input { width: 100%; min-width: 0; }
+.library-history-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--text-dim); }
+.library-resume { position: relative; display: flex; align-items: center; gap: 20px; padding: 16px 20px; margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface1); overflow: hidden; }
+.library-resume::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 52px; background: var(--accent); border-radius: 0 0 3px 0; }
+.library-resume-art { position: relative; flex: 0 0 64px; width: 64px; height: 96px; border-radius: 6px; background: var(--surface2); overflow: hidden; display: grid; place-items: center; color: var(--text-dim); }
+.library-resume-art img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.library-resume-copy { min-width: 0; flex: 1; }
+.library-resume-label { display: block; color: var(--accent); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 7px; }
+.library-resume h2 { margin: 0; font-family: var(--font-display, inherit); font-size: 20px; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.library-resume-progress { color: var(--text-dim); font-size: 12px; margin: 8px 0 0; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.library-resume > .btn { flex: 0 0 auto; }
+.library-welcome { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 760px; margin: 24px auto 0; padding: clamp(28px, 6vh, 56px) 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface1); }
+.library-welcome-mark { width: 64px; height: 64px; display: grid; place-items: center; background: var(--surface2); border-radius: 16px; color: var(--accent); margin-bottom: 22px; }
+.library-welcome-mark svg { width: 28px; height: 28px; }
+.library-welcome h2 { margin: 0; font-size: 24px; line-height: 1.3; }
+.library-welcome p { max-width: 360px; color: var(--text-dim); font-size: 14px; line-height: 1.65; margin: 12px 0 24px; }
+.library-welcome-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; }
+.library-filter-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 900px) {
+  .library-resume { gap: 14px; padding: 14px 16px; margin-bottom: 16px; }
+  .library-resume-art { flex-basis: 56px; width: 56px; height: 84px; }
+  .library-tools { margin-bottom: 16px; }
+  .library-resume h2 { font-size: 17px; }
+  .library-resume > .btn { font-size: 12px; padding-inline: 12px; }
+}
+@media (max-width: 600px) {
+  .library-subnav { width: 100%; }
+  .library-tools { flex-wrap: wrap; }
+  .library-tools > input { flex-basis: 100%; }
+  .library-sort-row { flex: 1; }
+  .library-sort-select { width: 100%; }
+  .library-filter-panel { left: 0; right: auto; }
+  .library-resume { flex-wrap: wrap; }
+  .library-resume > .btn { margin-left: 78px; }
+  .library-welcome { padding: 24px 16px; }
+}
+
+/* Separate native buttons avoid an interactive control inside a role=button. */
+.reading-room-card { position: relative; }
+.reading-room-card .card-open { appearance: none; display: block; width: 100%; min-width: 0; padding: 0; border: 0; border-radius: inherit; background: transparent; color: inherit; text-align: start; font: inherit; cursor: pointer; }
+.reading-room-card .card-open:disabled { cursor: default; }
+.reading-room-card .card-source { display: block; padding: 0 12px 12px; color: var(--text-dim); font-size: 11px; line-height: 1.4; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+.reading-room-card .card-overflow { position: absolute; z-index: 2; top: 8px; right: 8px; display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface1); color: var(--text); font: inherit; font-size: 23px; line-height: 1; cursor: pointer; opacity: 0; }
+.reading-room-card:hover .card-overflow, .reading-room-card:focus-within .card-overflow { opacity: 1; }
+.reading-room-card .card-open:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.reading-room-card .card-overflow:focus-visible { opacity: 1; outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: none) { .reading-room-card .card-overflow { opacity: 1; } }
+
+.library-quick-filter{display:flex;align-items:center;gap:10px;font-size:13px}.library-quick-filter input{accent-color:var(--accent);width:16px;height:16px}

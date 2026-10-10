@@ -1,0 +1,67 @@
+CREATE TABLE IF NOT EXISTS manga (
+    id TEXT NOT NULL PRIMARY KEY,
+    title TEXT NOT NULL,
+    alt_titles TEXT NOT NULL DEFAULT '[]',         -- JSON array
+    url TEXT NOT NULL DEFAULT '',
+    public_url TEXT NOT NULL DEFAULT '',
+    rating REAL NOT NULL DEFAULT -1.0,
+    is_nsfw INTEGER NOT NULL DEFAULT 0,
+    content_rating TEXT,
+    cover_url TEXT NOT NULL DEFAULT '',
+    large_cover_url TEXT,
+    state TEXT,
+    authors TEXT NOT NULL DEFAULT '[]',            -- JSON array
+    source_ref TEXT NOT NULL DEFAULT '{}',         -- JSON of MangaSourceRef
+    description TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '[]',               -- JSON array of {key,title}
+    chapters TEXT NOT NULL DEFAULT '[]',           -- JSON array of MangaChapter
+    unread INTEGER NOT NULL DEFAULT 0,
+    progress REAL NOT NULL DEFAULT 0.0,
+    updated_at INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS manga_title_idx ON manga(title);
+
+selectAll:
+SELECT * FROM manga ORDER BY title;
+
+selectById:
+SELECT * FROM manga WHERE id = :id;
+
+upsert:
+INSERT OR IGNORE INTO manga (
+    id, title, alt_titles, url, public_url, rating, is_nsfw, content_rating,
+    cover_url, large_cover_url, state, authors, source_ref, description, tags,
+    chapters, unread, progress, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updateById:
+UPDATE manga SET
+    title = :title,
+    alt_titles = :alt_titles,
+    url = :url,
+    public_url = :public_url,
+    rating = :rating,
+    is_nsfw = :is_nsfw,
+    content_rating = :content_rating,
+    cover_url = :cover_url,
+    large_cover_url = :large_cover_url,
+    state = :state,
+    authors = :authors,
+    source_ref = :source_ref,
+    description = :description,
+    tags = :tags,
+    chapters = :chapters,
+    unread = :unread,
+    progress = :progress,
+    updated_at = :updated_at
+WHERE id = :id;
+
+deleteById:
+DELETE FROM manga WHERE id = :id;
+
+countAll:
+SELECT COUNT(*) FROM manga;
+
+deleteAll:
+DELETE FROM manga;

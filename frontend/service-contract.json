@@ -1,0 +1,535 @@
+{
+  "schemaVersion": 1,
+  "operations": {
+    "sources.list": {
+      "method": "GET",
+      "path": "/sources",
+      "params": []
+    },
+    "sources.catalog": {
+      "method": "GET",
+      "path": "/sources/catalog",
+      "params": []
+    },
+    "sources.refresh": {
+      "method": "POST",
+      "path": "/sources/refresh",
+      "params": []
+    },
+    "sources.install": {
+      "method": "POST",
+      "path": "/sources/install",
+      "params": [
+        "id"
+      ]
+    },
+    "sources.uninstall": {
+      "method": "DELETE",
+      "path": "/sources/uninstall",
+      "params": [
+        "id"
+      ]
+    },
+    "sources.pinToggle": {
+      "method": "POST",
+      "path": "/sources/pin",
+      "params": [
+        "id"
+      ]
+    },
+    "sources.setInstalled": {
+      "method": "POST",
+      "path": "/sources/setInstalled",
+      "params": [],
+      "bodyParam": "ids"
+    },
+    "sources.filters": {
+      "method": "GET",
+      "path": "/sources/filters",
+      "params": [
+        "id"
+      ]
+    },
+    "content.popular": {
+      "method": "GET",
+      "path": "/sources/popular",
+      "params": [
+        "id",
+        "page"
+      ]
+    },
+    "content.latest": {
+      "method": "GET",
+      "path": "/sources/latest",
+      "params": [
+        "id",
+        "page"
+      ]
+    },
+    "content.search": {
+      "method": "GET",
+      "path": "/sources/search",
+      "params": [
+        "id",
+        "q",
+        "page",
+        "f"
+      ]
+    },
+    "content.details": {
+      "method": "GET",
+      "path": "/manga/details",
+      "params": [
+        "id",
+        "url"
+      ]
+    },
+    "content.pages": {
+      "method": "GET",
+      "path": "/manga/pages",
+      "params": [
+        "id",
+        "url",
+        "refresh"
+      ]
+    },
+    "content.globalSearch": {
+      "method": "GET",
+      "path": "/search/global",
+      "params": [
+        "q",
+        "limit"
+      ]
+    },
+    "content.suggestions": {
+      "method": "GET",
+      "path": "/suggestions",
+      "params": []
+    },
+    "content.alternatives": {
+      "method": "GET",
+      "path": "/manga/alternatives",
+      "params": [
+        "title"
+      ]
+    },
+    "library.favourites": {
+      "method": "GET",
+      "path": "/library/favourites",
+      "params": []
+    },
+    "library.favouriteToggle": {
+      "method": "POST",
+      "path": "/library/favourites/toggle",
+      "params": [
+        "mangaId"
+      ]
+    },
+    "library.history": {
+      "method": "GET",
+      "path": "/library/history",
+      "params": [
+        "limit"
+      ]
+    },
+    "library.historyRecord": {
+      "method": "POST",
+      "path": "/library/history/record",
+      "params": [
+        "mangaId",
+        "sourceId",
+        "chapterId",
+        "chapterTitle",
+        "page",
+        "percent"
+      ]
+    },
+    "library.historyRemove": {
+      "method": "POST",
+      "path": "/library/history/remove",
+      "params": [
+        "mangaId"
+      ]
+    },
+    "library.historyClear": {
+      "method": "POST",
+      "path": "/library/history/clear",
+      "params": []
+    },
+    "library.clear": {
+      "method": "POST",
+      "path": "/library/clear",
+      "params": []
+    },
+    "library.bookmarks": {
+      "method": "GET",
+      "path": "/library/bookmarks",
+      "params": []
+    },
+    "library.bookmarkAdd": {
+      "method": "POST",
+      "path": "/library/bookmarks/add",
+      "params": [
+        "mangaId",
+        "chapterId",
+        "chapterTitle",
+        "page",
+        "note"
+      ]
+    },
+    "library.bookmarkRemove": {
+      "method": "POST",
+      "path": "/library/bookmarks/remove",
+      "params": [
+        "id",
+        "mangaId",
+        "chapterId",
+        "page"
+      ]
+    },
+    "library.categories": {
+      "method": "GET",
+      "path": "/library/categories",
+      "params": []
+    },
+    "library.categoryManga": {
+      "method": "GET",
+      "path": "/library/categories",
+      "params": [
+        "categoryId"
+      ]
+    },
+    "library.categoriesForManga": {
+      "method": "GET",
+      "path": "/library/categories/manga",
+      "params": [
+        "mangaId"
+      ]
+    },
+    "library.categoryCreate": {
+      "method": "POST",
+      "path": "/library/categories/create",
+      "params": [
+        "title"
+      ]
+    },
+    "library.categoryRename": {
+      "method": "POST",
+      "path": "/library/categories/rename",
+      "params": [
+        "id",
+        "title"
+      ]
+    },
+    "library.categoryDelete": {
+      "method": "DELETE",
+      "path": "/library/categories/delete",
+      "params": [
+        "id"
+      ]
+    },
+    "library.categoryAdd": {
+      "method": "POST",
+      "path": "/library/categories/add",
+      "params": [
+        "mangaId",
+        "categoryId"
+      ]
+    },
+    "library.categoryRemove": {
+      "method": "DELETE",
+      "path": "/library/categories/remove",
+      "params": [
+        "mangaId",
+        "categoryId"
+      ]
+    },
+    "library.mangaPrefs": {
+      "method": "GET",
+      "path": "/manga/prefs",
+      "params": [
+        "mangaId"
+      ]
+    },
+    "library.mangaPrefsSave": {
+      "method": "POST",
+      "path": "/manga/prefs/save",
+      "params": [
+        "mangaId",
+        "readerMode",
+        "brightness",
+        "contrast",
+        "saturation",
+        "hue",
+        "palette",
+        "readerFit",
+        "prefetch",
+        "webtoonWidth",
+        "autoScrollLevel",
+        "translateTo",
+        "translateFrom",
+        "invert"
+      ]
+    },
+    "library.mangaPrefsClear": {
+      "method": "DELETE",
+      "path": "/manga/prefs/clear",
+      "params": [
+        "mangaId"
+      ]
+    },
+    "library.updates": {
+      "method": "GET",
+      "path": "/library/updates",
+      "params": []
+    },
+    "library.updatesRefresh": {
+      "method": "POST",
+      "path": "/library/updates/refresh",
+      "params": []
+    },
+    "library.updatesSeen": {
+      "method": "POST",
+      "path": "/library/updates/seen",
+      "params": [
+        "mangaId"
+      ]
+    },
+    "library.stats": {
+      "method": "GET",
+      "path": "/stats",
+      "params": []
+    },
+    "network.settings": {
+      "method": "GET",
+      "path": "/settings/network",
+      "params": []
+    },
+    "ui.preferences.get": {
+      "native": true,
+      "params": []
+    },
+    "ui.preferences.save": {
+      "native": true,
+      "params": [
+        "patch"
+      ]
+    },
+    "sync.status": {
+      "native": true,
+      "params": []
+    },
+    "sync.signIn": {
+      "native": true,
+      "params": [
+        "email",
+        "password"
+      ]
+    },
+    "sync.register": {
+      "native": true,
+      "params": [
+        "email",
+        "password"
+      ]
+    },
+    "sync.now": {
+      "native": true,
+      "params": []
+    },
+    "sync.signOut": {
+      "native": true,
+      "params": []
+    },
+    "library.readMarks": {
+      "native": true,
+      "params": [
+        "mangaId"
+      ]
+    },
+    "library.readMarksSave": {
+      "native": true,
+      "params": [
+        "mangaId",
+        "read",
+        "unread"
+      ]
+    },
+    "downloads.snapshot": {
+      "native": true,
+      "params": []
+    },
+    "downloads.enqueue": {
+      "native": true,
+      "params": [
+        "descriptors"
+      ]
+    },
+    "downloads.cancel": {
+      "native": true,
+      "params": [
+        "id"
+      ]
+    },
+    "downloads.cancelAll": {
+      "native": true,
+      "params": []
+    },
+    "downloads.retry": {
+      "native": true,
+      "params": [
+        "id"
+      ]
+    },
+    "downloads.remove": {
+      "native": true,
+      "params": [
+        "id"
+      ]
+    },
+    "downloads.clearCompleted": {
+      "native": true,
+      "params": []
+    },
+    "downloads.clearAll": {
+      "native": true,
+      "params": []
+    },
+    "downloads.settings.save": {
+      "native": true,
+      "params": [
+        "patch"
+      ]
+    },
+    "downloads.open": {
+      "native": true,
+      "params": [
+        "id"
+      ]
+    },
+    "downloads.export": {
+      "native": true,
+      "params": [
+        "id"
+      ]
+    },
+    "downloads.exportBundle": {
+      "native": true,
+      "params": [
+        "ids"
+      ]
+    },
+    "local.list": {
+      "native": true,
+      "params": []
+    },
+    "local.select": {
+      "native": true,
+      "params": [
+        "kind"
+      ]
+    },
+    "local.open": {
+      "native": true,
+      "params": [
+        "id"
+      ]
+    },
+    "local.remove": {
+      "native": true,
+      "params": [
+        "id"
+      ]
+    },
+    "local.progress": {
+      "native": true,
+      "params": [
+        "id",
+        "page",
+        "prefs"
+      ]
+    },
+    "tracking.capabilities": {
+      "native": true,
+      "params": []
+    },
+    "tracking.connect": {
+      "native": true,
+      "params": [
+        "slug",
+        "token"
+      ]
+    },
+    "tracking.disconnect": {
+      "native": true,
+      "params": [
+        "slug"
+      ]
+    },
+    "tracking.setEnabled": {
+      "native": true,
+      "params": [
+        "slug",
+        "enabled"
+      ]
+    },
+    "tracking.link": {
+      "native": true,
+      "params": [
+        "slug",
+        "mangaId",
+        "mediaId"
+      ]
+    },
+    "tracking.unlink": {
+      "native": true,
+      "params": [
+        "slug",
+        "mangaId"
+      ]
+    },
+    "tracking.search": {
+      "native": true,
+      "params": [
+        "slug",
+        "title"
+      ]
+    },
+    "tracking.getState": {
+      "native": true,
+      "params": [
+        "slug",
+        "mediaId"
+      ]
+    },
+    "tracking.setState": {
+      "native": true,
+      "params": [
+        "slug",
+        "mediaId",
+        "status",
+        "progress",
+        "score"
+      ]
+    },
+    "tracking.scrobble": {
+      "native": true,
+      "params": [
+        "mangaId",
+        "chapter"
+      ]
+    },
+    "downloads.pause": {
+      "native": true,
+      "params": []
+    },
+    "downloads.resume": {
+      "native": true,
+      "params": []
+    },
+    "downloads.retryFailed": {
+      "native": true,
+      "params": []
+    }
+  }
+}

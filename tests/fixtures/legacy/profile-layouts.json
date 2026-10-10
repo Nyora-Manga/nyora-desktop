@@ -1,0 +1,26 @@
+{
+  "fixtureKind": "source-audited-layout-description-not-installed-profile",
+  "verifiedAgainstInstalledPackages": false,
+  "macOS": {
+    "database": "Library/Application Support/Nyora/nyora.db",
+    "preferences": "UserDefaults.standard for actual installed bundle identity",
+    "downloads": "Library/Application Support/Nyora/downloads",
+    "legacyJson": "Library/Application Support/Nyora/library.json"
+  },
+  "windows": {
+    "database": "${APPDATA}/Nyora/nyora.db",
+    "preferences": "${APPDATA}/Nyora/appPrefs.json",
+    "downloads": "${XDG_DATA_HOME:-USERPROFILE/.local/share}/nyora/downloads",
+    "msixVirtualization": "unverified; collect actual installed layout"
+  },
+  "linux": {
+    "database": "${XDG_DATA_HOME:-HOME/.local/share}/nyora/nyora.db",
+    "preferences": "${XDG_CONFIG_HOME:-HOME/.config}/nyora/appPrefs.json",
+    "downloads": "${XDG_DATA_HOME:-HOME/.local/share}/nyora/downloads"
+  },
+  "overrides": {
+    "jvmDataDir": "-Dnyora.data.dir",
+    "doesNotIsolateAllStorage": true
+  },
+  "containsActualHomePath": false
+}

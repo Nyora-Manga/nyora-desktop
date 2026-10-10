@@ -1,0 +1,40 @@
+/* Typing focus is a surface change: no border flash, ring, or movement. */
+html[data-nyora-platform="desktop"] {
+  --desktop-field-focus:color-mix(in srgb,var(--accent) 12%,var(--surface2));
+  --desktop-field-focus-duration:140ms;
+}
+html[data-nyora-platform="desktop"] :is(input:not([type="checkbox"],[type="radio"],[type="range"],[type="color"],[type="file"],[type="button"],[type="submit"],[type="reset"],[type="hidden"]),textarea,select,[contenteditable="true"]) {
+  border-color:var(--border);
+  transition:background-color var(--desktop-field-focus-duration) ease-out;
+}
+html[data-nyora-platform="desktop"] :is(input:not([type="checkbox"],[type="radio"],[type="range"],[type="color"],[type="file"],[type="button"],[type="submit"],[type="reset"],[type="hidden"]),textarea,select,[contenteditable="true"]):focus {
+  background-color:var(--desktop-field-focus);
+  --autofill-surface:var(--desktop-field-focus);
+  border-color:var(--border);
+  outline:none;
+  box-shadow:none;
+  transform:none;
+}
+/* Search boxes with an icon/button share one continuous focused surface. */
+html[data-nyora-platform="desktop"] :is(.search-field-v2,.discover-search) {
+  border-color:var(--border);
+  transition:background-color var(--desktop-field-focus-duration) ease-out;
+}
+html[data-nyora-platform="desktop"] :is(.search-field-v2,.discover-search):focus-within {
+  background:var(--desktop-field-focus);
+  --autofill-surface:var(--desktop-field-focus);
+  border-color:var(--border);
+  outline:none;
+  box-shadow:none;
+  transform:none;
+}
+html[data-nyora-platform="desktop"] :is(.search-field-v2,.discover-search) input,
+html[data-nyora-platform="desktop"] :is(.search-field-v2,.discover-search) input:focus {
+  background:transparent;
+  border-color:transparent;
+}
+@media (prefers-reduced-motion:reduce) {
+  html[data-nyora-platform="desktop"] { --desktop-field-focus-duration:0ms; }
+  html[data-nyora-platform="desktop"] :is(input,textarea,select,[contenteditable="true"],.search-field-v2,.discover-search) { transition:none; }
+}
+html[data-nyora-platform="desktop"] body.reduce-motion { --desktop-field-focus-duration:0ms; }

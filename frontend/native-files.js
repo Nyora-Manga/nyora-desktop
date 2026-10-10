@@ -1,0 +1,2 @@
+import {nativeServices} from './native-services.js';
+export const files=Object.freeze({available:true,list:()=>nativeServices.request('local.list'),select:kind=>nativeServices.request('local.select',{kind}),open:id=>nativeServices.request('local.open',{id}),progress:(id,page)=>nativeServices.request('local.progress',{id,page}),savePreferences:(id,{mangaId,...prefs})=>nativeServices.request('local.progress',{id,prefs})});

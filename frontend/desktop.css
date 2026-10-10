@@ -1,0 +1,57 @@
+#desktop-runtime {
+  margin: 12px 8px; flex-shrink: 0;
+  max-width: min(380px, calc(100vw - 24px));
+  border: 1px solid var(--border, #7776); border-radius: 14px;
+  background: var(--surface1, #181820); color: var(--text, #f1f1f5);
+  box-shadow: 0 4px 18px #0003; font-size: 12px;
+}
+#desktop-runtime summary { padding: 8px 12px; cursor: pointer; }
+.desktop-runtime-body { padding: 0 14px 14px; max-height: 65vh; overflow: auto; overflow-wrap: anywhere; }
+.desktop-runtime-body pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11px; }
+.desktop-runtime-body label { display: block; margin-top: 10px; }
+.desktop-runtime-body input { display: block; width: 100%; box-sizing: border-box; padding: 7px; }
+.desktop-runtime-body > button { margin-top: 10px; }
+.desktop-runtime-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.desktop-runtime-actions .btn { height: auto; min-height: 32px; white-space: normal; }
+#desktop-source-status { position: relative; margin: 6px 8px; padding: 6px 10px; border: 1px solid var(--border, #7776); border-radius: var(--radius-sm, 12px); font-size: 12px; flex-shrink: 0; max-height: 24vh; overflow: auto; overflow-wrap: anywhere; background: var(--surface1); }
+#desktop-source-status[hidden] { display: none; }
+#desktop-source-status p { margin: 0; }
+.desktop-source-row { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.desktop-source-message { flex: 1 1 180px; min-width: 0; }
+.desktop-source-row + .desktop-source-row { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 8px; }
+.desktop-source-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-inline-start: auto; }
+.desktop-source-actions .btn { white-space: nowrap; min-height: 32px; }
+.desktop-source-dismiss { min-width: 32px; min-height: 32px; padding: 0 8px; font-size: 20px; }
+.desktop-source-help, .desktop-cookie-status { flex-basis: 100%; color: var(--text-dim); }
+.desktop-source-help summary { cursor: pointer; width: fit-content; min-height: 30px; display: flex; align-items: center; }
+.desktop-source-help p { padding-bottom: 4px; }
+.desktop-source-list > summary { cursor: pointer; min-height: 32px; padding: 6px 38px 6px 2px; box-sizing: border-box; }
+.desktop-source-list-body { padding-top: 6px; }
+.desktop-source-dismiss-all { position: absolute; top: 4px; right: 6px; }
+#desktop-source-status summary:focus-visible, .desktop-source-dismiss:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.desktop-verify-source { white-space: nowrap; flex-shrink: 0; }
+.browse-head-actions:has(> .desktop-verify-source) { flex-wrap: wrap; }
+@media (max-width: 760px) {
+  .browse-head-actions:has(> .desktop-verify-source) { overflow: visible; min-width: 0; }
+  .browse-head-actions:has(> .desktop-verify-source) .seg { min-width: 0; flex: 1 1 220px; }
+  .browse-head-actions > .desktop-verify-source { margin-inline-start: auto; }
+  .ext-row:has(.desktop-verify-source) { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .ext-row:has(.desktop-verify-source) .row-actions { flex-wrap: wrap; justify-content: flex-end; }
+  .source-row:has(.desktop-verify-source) { grid-template-columns: 38px minmax(0, 1fr); }
+  .source-row:has(.desktop-verify-source) .row-actions { grid-column: 1 / -1; width: 100%; justify-content: flex-end; }
+}
+#desktop-dismiss-community {
+  flex: 0 0 36px; width: 36px; height: 36px; padding: 0; border: 0;
+  border-radius: 50%; background: transparent; color: var(--text-dim);
+  font: inherit; font-size: 24px; line-height: 1; cursor: pointer;
+}
+#desktop-dismiss-community:hover { background: var(--surface2); color: var(--text); }
+#desktop-dismiss-community:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#desktop-dismiss-community:disabled { opacity: .5; cursor: wait; }
+.desktop-community-links { display: flex; align-items: center; flex: 0 0 auto; gap: 10px; }
+html:not([data-community-links="shown"]) .desktop-community-links { display: none; }
+@media (max-width: 760px) { .desktop-community-links { display: none; } }
+.desktop-about { max-width: 640px; padding-block: 8px; }
+.desktop-about > p { margin: 8px 0 16px; }
+.desktop-about-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.desktop-about-links a { text-decoration: none; }

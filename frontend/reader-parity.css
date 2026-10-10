@@ -1,0 +1,9 @@
+.reader-paged-track.vertical{flex-direction:column;overflow-x:hidden;overflow-y:auto;scroll-snap-type:y mandatory;overscroll-behavior:contain}
+.reader-paged-track.vertical .reader-slide{min-height:100%}
+.reader-paged.vertical .reader-zone.left,.reader-paged.vertical .reader-zone.right{left:0;right:0;width:100%;height:22%;bottom:auto}
+.reader-paged.vertical .reader-zone.left{top:0}
+.reader-paged.vertical .reader-zone.right{top:auto;bottom:0}
+.chapter-branch-select{max-width:180px;min-height:34px;font-size:12px}
+.chapter-branch-select[hidden]{display:none}
+
+.chapter-branch-cta{display:contents}

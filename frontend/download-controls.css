@@ -1,0 +1,6 @@
+.download-queue-controls{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0 6px}
+.download-queue-guidance{font-size:var(--text-sm,13px);color:var(--text-dim,currentColor);margin:0 0 16px;line-height:1.5}
+.download-queue-controls button:disabled{opacity:.6;cursor:wait}
+
+.downloads-host .progress.queue-held{opacity:.4}
+.downloads-host .progress.queue-held span{width:0;animation:none}

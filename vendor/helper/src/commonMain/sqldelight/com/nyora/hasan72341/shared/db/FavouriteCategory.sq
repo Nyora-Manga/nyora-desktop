@@ -1,0 +1,75 @@
+CREATE TABLE IF NOT EXISTS favourite_category (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    sort_key INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL DEFAULT 0,
+    deleted_at INTEGER
+);
+
+CREATE TABLE IF NOT EXISTS manga_favourite_category (
+    manga_id TEXT NOT NULL,
+    category_id INTEGER NOT NULL,
+    PRIMARY KEY (manga_id, category_id),
+    FOREIGN KEY (manga_id) REFERENCES manga(id) ON DELETE CASCADE,
+    FOREIGN KEY (category_id) REFERENCES favourite_category(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS manga_favcat_manga_idx ON manga_favourite_category(manga_id);
+CREATE INDEX IF NOT EXISTS manga_favcat_cat_idx ON manga_favourite_category(category_id);
+
+selectAllCategories:
+SELECT id, title, sort_key, created_at,
+       (SELECT COUNT(*) FROM manga_favourite_category WHERE category_id = favourite_category.id) AS manga_count
+FROM favourite_category
+WHERE deleted_at IS NULL
+ORDER BY sort_key, LOWER(title);
+
+selectAllCategoriesIncludingDeleted:
+SELECT id, title, sort_key, created_at, deleted_at
+FROM favourite_category
+ORDER BY sort_key, LOWER(title);
+
+selectCategoriesForManga:
+SELECT c.id, c.title, c.sort_key, c.created_at
+FROM manga_favourite_category mc
+JOIN favourite_category c ON c.id = mc.category_id
+WHERE mc.manga_id = :manga_id
+ORDER BY c.sort_key, LOWER(c.title);
+
+selectFavouritesByCategory:
+SELECT m.*, f.added_at
+FROM manga_favourite f
+JOIN manga m ON m.id = f.manga_id
+JOIN manga_favourite_category mc ON mc.manga_id = m.id
+WHERE mc.category_id = :category_id
+ORDER BY f.added_at DESC;
+
+insertCategory:
+INSERT INTO favourite_category (title, sort_key, created_at) VALUES (?, ?, ?);
+
+renameCategory:
+UPDATE favourite_category SET title = :title WHERE id = :id;
+
+deleteCategory:
+DELETE FROM favourite_category WHERE id = :id;
+
+softDeleteCategory:
+UPDATE favourite_category SET deleted_at = :deleted_at WHERE id = :id;
+
+addMangaToCategory:
+INSERT OR IGNORE INTO manga_favourite_category (manga_id, category_id) VALUES (?, ?);
+
+removeMangaFromCategory:
+DELETE FROM manga_favourite_category WHERE manga_id = :manga_id AND category_id = :category_id;
+
+removeMangaFromAllCategories:
+DELETE FROM manga_favourite_category WHERE manga_id = :manga_id;
+
+selectAllMangaCategories:
+SELECT * FROM manga_favourite_category;
+
+deleteAllMangaCategories:
+DELETE FROM manga_favourite_category;
+
+deleteAllCategories:
+DELETE FROM favourite_category;

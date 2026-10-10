@@ -1,0 +1,12 @@
+import {readFile,writeFile,appendFile} from 'node:fs/promises';
+const pkg=JSON.parse(await readFile('package.json','utf8'));
+const run=Number(process.env.GITHUB_RUN_NUMBER);
+if(!Number.isSafeInteger(run)||run<1)throw new Error('A GitHub run number is required');
+const [major,minor,patch]=pkg.version.split('.').map(Number);
+const version=`${major}.${minor}.${patch+run}`;
+pkg.version=version;
+const lock=JSON.parse(await readFile('package-lock.json','utf8'));lock.version=version;lock.packages[''].version=version;
+await writeFile('package.json',JSON.stringify(pkg,null,2)+'\n');
+await writeFile('package-lock.json',JSON.stringify(lock,null,2)+'\n');
+if(process.env.GITHUB_OUTPUT)await appendFile(process.env.GITHUB_OUTPUT,`version=${version}\ntag=v${version}\n`);
+console.log(`Release v${version}`);

@@ -1,0 +1,45 @@
+CREATE TABLE IF NOT EXISTS manga_history (
+    manga_id TEXT NOT NULL PRIMARY KEY,
+    source_id TEXT NOT NULL DEFAULT '',
+    chapter_id TEXT NOT NULL DEFAULT '',
+    chapter_title TEXT NOT NULL DEFAULT '',
+    page INTEGER NOT NULL DEFAULT 0,
+    scroll REAL NOT NULL DEFAULT 0.0,
+    percent REAL NOT NULL DEFAULT 0.0,
+    chapters_count INTEGER NOT NULL DEFAULT 0,
+    updated_at INTEGER NOT NULL DEFAULT 0,
+    deleted_at INTEGER,
+    FOREIGN KEY (manga_id) REFERENCES manga(id) ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS manga_history_updated_idx ON manga_history(updated_at DESC);
+
+selectRecent:
+SELECT m.*, h.source_id, h.chapter_id, h.chapter_title, h.page, h.scroll, h.percent, h.chapters_count, h.updated_at, h.deleted_at
+FROM manga_history h
+JOIN manga m ON m.id = h.manga_id
+WHERE h.deleted_at IS NULL
+ORDER BY h.updated_at DESC
+LIMIT :limit;
+
+selectByMangaId:
+SELECT * FROM manga_history WHERE manga_id = :manga_id;
+
+upsert:
+INSERT OR REPLACE INTO manga_history (manga_id, source_id, chapter_id, chapter_title, page, scroll, percent, chapters_count, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+softDelete:
+UPDATE manga_history SET deleted_at = :deleted_at WHERE manga_id = :manga_id;
+
+deleteByMangaId:
+DELETE FROM manga_history WHERE manga_id = :manga_id;
+
+selectAllIncludingDeleted:
+SELECT * FROM manga_history;
+
+deleteAll:
+DELETE FROM manga_history;
+
+countAll:
+SELECT COUNT(*) FROM manga_history;

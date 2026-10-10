@@ -1,0 +1,17 @@
+{
+  "web": {
+    "repository": "Nyora-Manga/nyora-web",
+    "baseCommit": "65a2c2a24504bbae8259313f6510922a6d320d20",
+    "includesLocalDesktopChanges": true
+  },
+  "helper": {
+    "repository": "Nyora-Manga/nyora-shared-datadriven",
+    "baseCommit": "7d8b42686992840c64c6360bdf6638f36bb78555",
+    "includesLocalDesktopChanges": true
+  },
+  "data": {
+    "repository": "Nyora-Manga/nyora-data-driven",
+    "baseCommit": "2e552bef48b19010814080db4f417b32877684ac",
+    "includesLocalDesktopChanges": true
+  }
+}

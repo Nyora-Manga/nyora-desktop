@@ -1,0 +1,266 @@
+{
+  "fixtureKind": "synthetic-scenario-not-platform-database",
+  "id": "guest",
+  "createdOn": "2026-10-04",
+  "actualPackageVersion": null,
+  "helperRevision": null,
+  "sqlSchemaVersion": null,
+  "oldApplicationExported": false,
+  "migrationObserved": false,
+  "account": {
+    "kind": "guest",
+    "containsCredentials": false,
+    "reconnectRequired": false,
+    "syncDuringMigration": "disabled"
+  },
+  "inputCounts": {
+    "sources": 5,
+    "manga": 5,
+    "chapters": 5,
+    "library": 5,
+    "categories": 2,
+    "historyEvents": 3,
+    "bookmarks": 2,
+    "trackingLinks": 2,
+    "completedDownloads": 1,
+    "interruptedJobs": 1,
+    "localFiles": 1
+  },
+  "sources": [
+    {
+      "id": "data:fixture-alpha",
+      "state": "available"
+    },
+    {
+      "id": "data:fixture-beta",
+      "state": "available"
+    },
+    {
+      "id": "data:fixture-unavailable",
+      "state": "unresolved-valid-canonical"
+    },
+    {
+      "id": "parser:fixture-retired",
+      "state": "legacy-only-no-new-writes"
+    },
+    {
+      "id": "local",
+      "state": "excluded-local"
+    }
+  ],
+  "manga": [
+    {
+      "localKey": "m1",
+      "sourceId": "data:fixture-alpha",
+      "contentKey": "/synthetic/title-1",
+      "title": "Same Synthetic Title"
+    },
+    {
+      "localKey": "m2",
+      "sourceId": "data:fixture-beta",
+      "contentKey": "/synthetic/title-2",
+      "title": "Same Synthetic Title"
+    },
+    {
+      "localKey": "m3",
+      "sourceId": "data:fixture-unavailable",
+      "contentKey": "/synthetic/title-3",
+      "title": "Unavailable Synthetic Title"
+    },
+    {
+      "localKey": "m4",
+      "sourceId": "parser:fixture-retired",
+      "contentKey": "/synthetic/title-4",
+      "title": "Retired Synthetic Title"
+    },
+    {
+      "localKey": "m5",
+      "sourceId": "local",
+      "contentKey": "/synthetic/title-5",
+      "title": "Local Synthetic Title"
+    }
+  ],
+  "chapters": [
+    {
+      "localKey": "c1",
+      "mangaLocalKey": "m1",
+      "chapterKey": "/synthetic/chapter-1",
+      "title": "Synthetic chapter"
+    },
+    {
+      "localKey": "c2",
+      "mangaLocalKey": "m2",
+      "chapterKey": "/synthetic/chapter-2",
+      "title": "Synthetic chapter"
+    },
+    {
+      "localKey": "c3",
+      "mangaLocalKey": "m3",
+      "chapterKey": "/synthetic/chapter-3",
+      "title": "Synthetic chapter"
+    },
+    {
+      "localKey": "c4",
+      "mangaLocalKey": "m4",
+      "chapterKey": "/synthetic/chapter-4",
+      "title": "Synthetic chapter"
+    },
+    {
+      "localKey": "c5",
+      "mangaLocalKey": "m5",
+      "chapterKey": "/synthetic/chapter-5",
+      "title": "Synthetic chapter"
+    }
+  ],
+  "categories": [
+    {
+      "localKey": "cat1",
+      "title": "Reading"
+    },
+    {
+      "localKey": "cat2",
+      "title": "Reading"
+    }
+  ],
+  "library": [
+    {
+      "mangaLocalKey": "m1",
+      "categoryLocalKeys": [
+        "cat1"
+      ]
+    },
+    {
+      "mangaLocalKey": "m2",
+      "categoryLocalKeys": [
+        "cat2"
+      ]
+    },
+    {
+      "mangaLocalKey": "m3",
+      "categoryLocalKeys": [
+        "cat1"
+      ]
+    },
+    {
+      "mangaLocalKey": "m4",
+      "categoryLocalKeys": [
+        "cat2"
+      ]
+    },
+    {
+      "mangaLocalKey": "m5",
+      "categoryLocalKeys": [
+        "cat1"
+      ]
+    }
+  ],
+  "historyEvents": [
+    {
+      "mangaLocalKey": "m1",
+      "chapterLocalKey": "c1",
+      "page": 20,
+      "updatedAt": "2026-10-01T12:00:00.000Z"
+    },
+    {
+      "mangaLocalKey": "m1",
+      "chapterLocalKey": "c1",
+      "page": 3,
+      "updatedAt": "2026-10-02T12:00:00.000Z"
+    },
+    {
+      "mangaLocalKey": "m2",
+      "chapterLocalKey": "c2",
+      "page": 4,
+      "updatedAt": "2026-10-01T13:00:00.000Z"
+    }
+  ],
+  "bookmarks": [
+    {
+      "localKey": "b1",
+      "mangaLocalKey": "m1",
+      "chapterLocalKey": "c1",
+      "page": 2,
+      "note": "Synthetic note A"
+    },
+    {
+      "localKey": "b2",
+      "mangaLocalKey": "m2",
+      "chapterLocalKey": "c2",
+      "page": 1,
+      "note": "Synthetic note B"
+    }
+  ],
+  "trackingLinks": [
+    {
+      "mangaLocalKey": "m1",
+      "service": "anilist",
+      "remoteId": "synthetic-101"
+    },
+    {
+      "mangaLocalKey": "m2",
+      "service": "anilist",
+      "remoteId": "synthetic-102"
+    }
+  ],
+  "downloadJobs": [
+    {
+      "mangaLocalKey": "m1",
+      "chapterLocalKey": "c1",
+      "status": "completed",
+      "file": "downloads/fixture-alpha/Synthetic/Chapter 1.cbz"
+    },
+    {
+      "mangaLocalKey": "m2",
+      "chapterLocalKey": "c2",
+      "status": "interrupted-in-memory-only",
+      "restorableFromLegacyQueue": false
+    }
+  ],
+  "files": [
+    {
+      "relativePath": "downloads/fixture-alpha/Synthetic/Chapter 1.cbz",
+      "kind": "completed-download",
+      "bytes": 185,
+      "sha256": "84ae73e5aba0cfac0568cd1c6ca5cb9e5d3e19b6ca4b5c7939494d53b5a6993d",
+      "entries": [
+        "001.png"
+      ],
+      "synthetic": true
+    },
+    {
+      "relativePath": "local-folder/Local Synthetic Title.cbz",
+      "kind": "external-local-media",
+      "bytes": 185,
+      "sha256": "84ae73e5aba0cfac0568cd1c6ca5cb9e5d3e19b6ca4b5c7939494d53b5a6993d",
+      "entries": [
+        "001.png"
+      ],
+      "synthetic": true
+    }
+  ],
+  "targetAssertions": {
+    "distinctMangaDespiteSameTitle": [
+      "m1",
+      "m2"
+    ],
+    "distinctCategoriesDespiteSameTitle": [
+      "cat1",
+      "cat2"
+    ],
+    "latestCheckpoint": {
+      "mangaLocalKey": "m1",
+      "page": 3
+    },
+    "unresolvedCanonicalPreservedInStaging": [
+      "data:fixture-unavailable"
+    ],
+    "retiredIdentityRequiresExplicitMigrationOrOmission": [
+      "parser:fixture-retired"
+    ],
+    "localAndMediaExcludedFromPortableArchive": true,
+    "originalFilesRemainByteIdentical": true,
+    "noSyncBeforeValidatedCommit": true,
+    "noAutomaticCredentialOrCookieCopy": true,
+    "portableExportCounts": "Must be measured by reference projection; not inferred from these scenario rows."
+  }
+}

@@ -1,0 +1,62 @@
+import {browserOptions} from '../scripts/browser-options.mjs';
+import assert from 'node:assert/strict';
+import {mkdir} from 'node:fs/promises';
+import {chromium} from 'playwright';
+import {createFrontendServer} from '../scripts/dev-server.mjs';
+import {resolve} from 'node:path';
+const server=await createFrontendServer(resolve('dist'),{port:0});
+const browser=await chromium.launch({headless:true,...(await browserOptions())});
+const context=await browser.newContext({viewport:{width:1380,height:940}});
+await context.addInitScript(()=>{
+  const source={id:'data:TEST',name:'Test',lang:'en',isInstalled:true,isPinned:true};
+  const chapters=[{id:'a1',url:'/a1',number:1,branch:'Team A',title:'A one'},{id:'b1',url:'/b1',number:1,branch:'Team B',title:'B one'},{id:'a2',url:'/a2',number:2,branch:'Team A',title:'A two'}];
+  const books=[{id:'one',title:'Amber',url:'/one',source:{name:source.id},chapters,libraryAddedAt:1,rating:0.4},{id:'two',title:'Blue',url:'/two',source:{name:source.id},chapters:[],libraryAddedAt:2,rating:0.8}];
+  let prefs={onboarded:true,appearance:'DARK',reader:{mode:'VERTICAL',fit:'HEIGHT',prefetch:false}};
+  window.__calls=[];
+  window.nyoraDesktop={runtimeStatus:async()=>({runtime:'electron',dataMode:'native-helper',appVersion:'0.2.3'}),verificationStatus:()=>[],onNavigate:()=>()=>{},serviceRequest:async({operation,params={}})=>{
+    window.__calls.push({operation,params});
+    if(operation==='ui.preferences.get')return prefs;
+    if(operation==='ui.preferences.save'){prefs={...prefs,...params.patch};return prefs;}
+    if(operation==='sources.list')return {sources:[source]};
+    if(operation==='sources.catalog')return {entries:[source]};
+    if(operation==='library.categories')return {categories:[]};
+    if(operation==='library.stats')return {};
+    if(operation==='library.favourites')return {entries:books};
+    if(operation==='library.updates')return {entries:[{mangaId:'two',sourceId:source.id,newChapters:2}]};
+    if(operation==='library.readMarks')return {read:[],unread:[]};
+    if(operation==='library.mangaPrefs')return {present:false};
+    if(operation==='downloads.snapshot')return {entries:[{id:'offline',mangaId:'one',mangaUrl:'/one',sourceId:source.id,status:'COMPLETED',offline:true}],settings:{},queuePaused:false};
+    if(operation==='tracking.capabilities')return {trackers:[]};
+    if(operation==='content.details')return {manga:books[0],chapters};
+    if(operation==='content.pages')return {pages:[1,2,3].map(i=>({url:location.origin+'/page-'+i+'.png'}))};
+    return {entries:[]};
+  }};
+});
+const page=await context.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));
+await page.route('**/page-*.png',route=>route.fulfill({contentType:'image/svg+xml',body:'<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><rect width="600" height="800" fill="#cdb8c7"/><text x="220" y="400" font-size="40">Reader page</text></svg>'}));
+try {
+  await page.goto(`http://127.0.0.1:${server.address().port}/#/library`);await page.locator('.card-open').first().waitFor();await page.locator('#splash').waitFor({state:'hidden'});
+  assert.equal(await page.getByLabel('Sort library').locator('option').count(),11);
+  await page.getByLabel('Sort library').selectOption('rating');assert.match(await page.locator('.card-open').first().innerText(),/Blue/);
+  await page.locator('.library-filter-toggle').click();await page.getByLabel('Downloaded',{exact:true}).check();
+  await page.waitForFunction(()=>document.querySelectorAll('.card-open').length===1);assert.match(await page.locator('.card-open').innerText(),/Amber/);
+  await page.getByLabel('Downloaded',{exact:true}).uncheck();await page.getByLabel('New chapters',{exact:true}).check();assert.match(await page.locator('.card-open').innerText(),/Blue/);
+  await mkdir('test-results/parity',{recursive:true});await page.screenshot({path:'test-results/parity/library.png'});
+  await page.evaluate(()=>{location.hash='/details?sid=data%3ATEST&url=%2Fone';});await page.getByLabel('Chapter branch').waitFor();
+  await page.getByLabel('Chapter branch').selectOption('0');assert.equal(await page.locator('.d2-chapter-list > li').count(),2);
+  await page.screenshot({path:'test-results/parity/branches.png'});
+  await page.evaluate(()=>{location.hash='/reader?sid=data%3ATEST&url=%2Fone&chapterUrl=%2Fa1';});await page.locator('.reader-paged-track.vertical').waitFor();
+  const geometry=await page.locator('.reader-slide').evaluateAll(slides=>slides.map(s=>({x:s.getBoundingClientRect().x,y:s.getBoundingClientRect().y})));
+  assert.equal(geometry[0].x,geometry[1].x);assert(geometry[1].y>geometry[0].y);
+  await page.keyboard.press('ArrowDown');await page.waitForTimeout(600);
+  const visible=await page.locator('.reader-paged-track').evaluate(track=>{const r=track.getBoundingClientRect();return [...track.children].map(s=>Math.abs(s.getBoundingClientRect().top-r.top));});assert(visible[1]<visible[0]);
+  await page.screenshot({path:'test-results/parity/vertical-reader.png'});
+  await page.keyboard.press('n');await page.waitForFunction(()=>location.hash.includes('chapterUrl=%2Fa2'));
+  await page.evaluate(()=>{location.hash='/settings';});await page.getByRole('button',{name:'Advanced',exact:true}).click();
+  await page.getByLabel('Check for new chapters',{exact:true}).selectOption('360');
+  await page.waitForFunction(()=>NYORA_SERVICES.library.uiPreferences().automation?.updates===360);
+  await page.getByLabel('Local backup',{exact:true}).selectOption('1440');
+  await page.waitForFunction(()=>NYORA_SERVICES.library.uiPreferences().automation?.backup===1440);
+  await page.screenshot({path:'test-results/parity/background-settings.png'});
+  assert.deepEqual(errors,[]);console.log('PASS: eleven library sorts, download/update filters, chapter branches, vertical paging, same-branch next chapter');
+}finally{await browser.close();await new Promise(r=>server.close(r));}

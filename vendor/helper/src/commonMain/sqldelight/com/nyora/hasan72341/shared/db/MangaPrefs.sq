@@ -1,0 +1,28 @@
+CREATE TABLE IF NOT EXISTS manga_prefs (
+    manga_id TEXT NOT NULL PRIMARY KEY,
+    reader_mode TEXT NOT NULL DEFAULT '',
+    brightness REAL NOT NULL DEFAULT 0.0,
+    contrast REAL NOT NULL DEFAULT 1.0,
+    saturation REAL NOT NULL DEFAULT 1.0,
+    hue REAL NOT NULL DEFAULT 0.0,
+    palette TEXT NOT NULL DEFAULT '',
+    updated_at INTEGER NOT NULL DEFAULT 0,
+    FOREIGN KEY (manga_id) REFERENCES manga(id) ON DELETE CASCADE
+);
+
+selectByMangaId:
+SELECT * FROM manga_prefs WHERE manga_id = :manga_id;
+
+upsert:
+INSERT OR REPLACE INTO manga_prefs (
+    manga_id, reader_mode, brightness, contrast, saturation, hue, palette, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectAll:
+SELECT * FROM manga_prefs;
+
+deleteByMangaId:
+DELETE FROM manga_prefs WHERE manga_id = :manga_id;
+
+deleteAll:
+DELETE FROM manga_prefs;

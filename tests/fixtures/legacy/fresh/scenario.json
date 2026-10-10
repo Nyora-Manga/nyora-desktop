@@ -1,0 +1,25 @@
+{
+  "fixtureKind": "synthetic-scenario-not-platform-database",
+  "id": "fresh",
+  "actualPackageVersion": null,
+  "helperRevision": null,
+  "sqlSchemaVersion": null,
+  "migrationObserved": false,
+  "inputCounts": {
+    "sources": 0,
+    "manga": 0,
+    "chapters": 0,
+    "library": 0,
+    "categories": 0,
+    "historyEvents": 0,
+    "bookmarks": 0,
+    "trackingLinks": 0,
+    "completedDownloads": 0,
+    "localFiles": 0
+  },
+  "targetAssertions": [
+    "Starts with an empty isolated profile.",
+    "Does not probe or rename a legacy profile automatically.",
+    "Installed UI starts offline without hosted frontend assets."
+  ]
+}

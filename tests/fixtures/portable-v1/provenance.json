@@ -1,0 +1,45 @@
+{
+  "fixtureKind": "copied-authoritative-portable-archive",
+  "sourcePath": "nyora-mac/nyora-shared/src/jvmTest/resources/backup/v1/golden-minimal.nyorabk",
+  "sourceHelperRevision": "798da31f4de57c9b69ef5d16d12e6b608aa3a14c",
+  "copiedOn": "2026-10-04",
+  "bytes": 4902,
+  "sha256": "4cb654472016c0fc7c913bf2fb1b41cbf22ea308489cb7034e2e92667aafd7c2",
+  "schemaVersion": 1,
+  "archiveId": "123e4567-e89b-12d3-a456-426614174000",
+  "producerMetadata": {
+    "appVersion": "2.0.7",
+    "platform": "desktop",
+    "isReleaseEvidence": false
+  },
+  "entryOrder": [
+    "manifest.json",
+    "sources.json",
+    "categories.json",
+    "preferences.json",
+    "manga.ndjson",
+    "chapters.ndjson",
+    "library.ndjson",
+    "history.ndjson",
+    "bookmarks.ndjson",
+    "tracking.ndjson"
+  ],
+  "sectionCounts": {
+    "sources.json": 1,
+    "categories.json": 1,
+    "preferences.json": 1,
+    "manga.ndjson": 1,
+    "chapters.ndjson": 1,
+    "library.ndjson": 1,
+    "history.ndjson": 1,
+    "bookmarks.ndjson": 1,
+    "tracking.ndjson": 1
+  },
+  "validation": {
+    "byteIdenticalToSource": true,
+    "zipCrcManifestLengthsHashesCounts": "passed",
+    "referenceKotlinCodec": "not-run",
+    "oldApplicationExport": "not-run",
+    "migration": "not-run"
+  }
+}

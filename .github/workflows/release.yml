@@ -1,0 +1,116 @@
+name: Build and release Electron desktop
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  build:
+    name: ${{ matrix.platform }} / ${{ matrix.arch }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {platform: mac, arch: arm64, runner: macos-15}
+          - {platform: mac, arch: x64, runner: macos-15-intel}
+          - {platform: win, arch: x64, runner: windows-2025}
+          - {platform: win, arch: arm64, runner: windows-11-arm}
+          - {platform: linux, arch: x64, runner: ubuntu-24.04}
+          - {platform: linux, arch: arm64, runner: ubuntu-24.04-arm}
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          architecture: ${{ matrix.arch }}
+          cache: npm
+      - name: Check native runner
+        env:
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: node -e 'if(process.arch!==process.env.TARGET_ARCH)throw Error("A native runner is required")'
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        if: matrix.platform != 'mac' || matrix.arch != 'arm64'
+        with:
+          distribution: zulu
+          java-version: '17'
+          architecture: ${{ matrix.arch }}
+          cache: gradle
+          cache-dependency-path: |
+            vendor/helper/*.gradle.kts
+            vendor/helper/gradle/wrapper/gradle-wrapper.properties
+      - name: Select target JDK
+        if: matrix.platform != 'mac' || matrix.arch != 'arm64'
+        run: node -e 'require("fs").appendFileSync(process.env.GITHUB_ENV,"NYORA_JDK_DIR="+process.env.JAVA_HOME+"\n")'
+      - name: Install Linux runtime and packaging dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libnss3 libatk-bridge2.0-0 libgtk-3-0 libgbm1 libasound2t64 libfuse2
+      - run: npm ci
+      - run: npx playwright install chromium
+      - name: Assign release version
+        run: node scripts/prepare-release.mjs
+      - name: Build bundled native helper
+        run: npm run build:helper
+      - name: Build frontend
+        run: npm run build:frontend
+      - name: Package and validate native application
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          TARGET_PLATFORM: ${{ matrix.platform }}
+          TARGET_ARCH: ${{ matrix.arch }}
+        run: |
+          if [ "$RUNNER_OS" = Linux ]; then
+            xvfb-run -a node scripts/package-electron.mjs "--$TARGET_PLATFORM" "--$TARGET_ARCH"
+          else
+            node scripts/package-electron.mjs "--$TARGET_PLATFORM" "--$TARGET_ARCH"
+          fi
+      - name: Stage verified installers
+        run: node scripts/stage-release.mjs
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: desktop-${{ matrix.platform }}-${{ matrix.arch }}
+          path: release-assets/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Upload diagnostic reports
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: diagnostics-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            test-results/
+            vendor/helper/build/reports/tests/
+          retention-days: 7
+  publish:
+    name: Publish all six targets
+    needs: build
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          pattern: desktop-*
+          path: release-assets
+          merge-multiple: true
+      - name: Verify complete matrix and publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/publish-release.mjs

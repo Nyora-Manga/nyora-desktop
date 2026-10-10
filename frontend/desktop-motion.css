@@ -1,0 +1,91 @@
+/* Desktop-only interaction polish. No route/reader/scroll-container animation,
+   polling-row transitions, skeleton effects, or per-card entry staggering. */
+@keyframes nyora-library-results-in {
+  from { opacity: 0.82; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html[data-nyora-platform="desktop"] #sidebar .nav-item:not(.desktop-command-trigger) {
+    transition: background-color 150ms var(--ease), color 150ms var(--ease), transform 130ms var(--ease);
+  }
+  html[data-nyora-platform="desktop"] #sidebar .nav-item:not(.desktop-command-trigger) .icon {
+    transition: color 150ms var(--ease);
+  }
+  html[data-nyora-platform="desktop"] body:not(.reader-active) #view .btn,
+  html[data-nyora-platform="desktop"] #modalRoot .modal-backdrop:not(.desktop-command-backdrop) .modal:not(.desktop-command-dialog) .btn,
+  html[data-nyora-platform="desktop"] #desktop-source-status .btn {
+    transition: background-color 140ms var(--ease), color 140ms var(--ease), border-color 140ms var(--ease), opacity 140ms var(--ease), transform 120ms var(--ease);
+  }
+  html[data-nyora-platform="desktop"] body:not(.reader-active) #view .btn:not(:disabled):not([aria-disabled="true"]):active,
+  html[data-nyora-platform="desktop"] #modalRoot .modal-backdrop:not(.desktop-command-backdrop) .modal:not(.desktop-command-dialog) .btn:not(:disabled):not([aria-disabled="true"]):active,
+  html[data-nyora-platform="desktop"] #desktop-source-status .btn:not(:disabled):not([aria-disabled="true"]):active {
+    transform: scale(0.98);
+  }
+  html[data-nyora-platform="desktop"] .library-tools .input {
+    transition: border-color 150ms var(--ease), background-color 150ms var(--ease), box-shadow 150ms var(--ease);
+  }
+  html[data-nyora-platform="desktop"] .library-favourites .chip,
+  html[data-nyora-platform="desktop"] .library-favourites .seg button {
+    transition: background-color 140ms var(--ease), color 140ms var(--ease), border-color 140ms var(--ease), transform 120ms var(--ease);
+  }
+  html[data-nyora-platform="desktop"] .library-favourites .chip:active,
+  html[data-nyora-platform="desktop"] .library-favourites .seg button:active {
+    transform: scale(0.98);
+  }
+  html[data-nyora-platform="desktop"] .library-favourites .grid:not(:has(.skeleton)),
+  html[data-nyora-platform="desktop"] .library-favourites .empty {
+    animation: nyora-library-results-in 140ms var(--ease);
+  }
+  html[data-nyora-platform="desktop"] .library-favourites .card .cover {
+    transition: transform 180ms var(--ease), box-shadow 180ms var(--ease), border-color 180ms var(--ease);
+  }
+  html[data-nyora-platform="desktop"] #modalRoot .modal-backdrop:not(.desktop-command-backdrop) {
+    transition: opacity 160ms var(--ease);
+  }
+  html[data-nyora-platform="desktop"] #modalRoot .modal-backdrop:not(.desktop-command-backdrop) .modal:not(.desktop-command-dialog) {
+    transform: translateY(4px);
+    transition: transform 160ms var(--ease);
+  }
+  html[data-nyora-platform="desktop"] #modalRoot .modal-backdrop.open:not(.desktop-command-backdrop) .modal:not(.desktop-command-dialog) {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+  html[data-nyora-platform="desktop"] #sidebar .nav-item:not(.desktop-command-trigger):hover:not(.active) {
+    transform: translateX(2px);
+  }
+  html[data-nyora-platform="desktop"] body:not(.reader-active) #view .btn:not(:disabled):not([aria-disabled="true"]):hover:not(:active),
+  html[data-nyora-platform="desktop"] #modalRoot .modal-backdrop:not(.desktop-command-backdrop) .modal:not(.desktop-command-dialog) .btn:not(:disabled):not([aria-disabled="true"]):hover:not(:active),
+  html[data-nyora-platform="desktop"] #desktop-source-status .btn:not(:disabled):not([aria-disabled="true"]):hover:not(:active) {
+    transform: translateY(-1px);
+  }
+  html[data-nyora-platform="desktop"] .library-favourites .card:hover .cover {
+    transform: translateY(-3px);
+  }
+  html[data-nyora-platform="desktop"] .library-favourites .card:active .cover {
+    transform: translateY(-1px);
+    transition-duration: 100ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html[data-nyora-platform="desktop"] #sidebar .nav-item:not(.desktop-command-trigger),
+  html[data-nyora-platform="desktop"] #sidebar .nav-item:not(.desktop-command-trigger) .icon,
+  html[data-nyora-platform="desktop"] body:not(.reader-active) #view .btn,
+  html[data-nyora-platform="desktop"] #modalRoot .modal-backdrop:not(.desktop-command-backdrop) .modal:not(.desktop-command-dialog) .btn,
+  html[data-nyora-platform="desktop"] #desktop-source-status .btn,
+  html[data-nyora-platform="desktop"] .library-tools .input,
+  html[data-nyora-platform="desktop"] .library-favourites .chip,
+  html[data-nyora-platform="desktop"] .library-favourites .seg button,
+  html[data-nyora-platform="desktop"] .library-favourites .grid:not(:has(.skeleton)),
+  html[data-nyora-platform="desktop"] .library-favourites .empty,
+  html[data-nyora-platform="desktop"] .library-favourites .card .cover,
+  html[data-nyora-platform="desktop"] #modalRoot .modal-backdrop:not(.desktop-command-backdrop),
+  html[data-nyora-platform="desktop"] #modalRoot .modal-backdrop:not(.desktop-command-backdrop) .modal:not(.desktop-command-dialog) {
+    animation: none;
+    transition: none;
+    transform: none;
+  }
+}

@@ -1,0 +1,42 @@
+.desktop-command-trigger { width:100%; justify-content:space-between; border:0; background:transparent; color:inherit; cursor:pointer; font:inherit; }
+.desktop-command-trigger kbd,.desktop-command-option kbd { color:var(--text-dim,#888); font:inherit; font-size:11px; white-space:nowrap; }
+.desktop-command-remote[hidden] { display:none; }
+.desktop-command-backdrop { display:flex; align-items:flex-start; justify-content:center; padding:clamp(20px,12vh,120px) 16px 24px; background:rgba(0,0,0,.48); }
+.desktop-command-dialog { width:min(580px,100%); box-sizing:border-box; max-height:calc(100dvh - clamp(20px,12vh,120px) - 24px); min-height:0; display:flex; flex-direction:column; border:1px solid var(--border,rgba(128,128,128,.25)); border-radius:16px; background:var(--surface1,var(--bg,#202020)); color:var(--text,inherit); box-shadow:0 20px 80px rgba(0,0,0,.35); padding:20px; }
+.desktop-command-head { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:14px; }
+.desktop-command-head h2 { margin:0; font-size:18px; }
+.desktop-command-close { width:32px; height:32px; border:0; border-radius:8px; color:inherit; background:transparent; font-size:25px; cursor:pointer; }
+.desktop-command-input { width:100%; box-sizing:border-box; padding:12px; border-radius:9px; border:1px solid var(--border,rgba(128,128,128,.3)); background:var(--bg,#161616); color:inherit; font:inherit; }
+.desktop-command-list { overflow:auto; min-height:0; max-height:min(50vh,390px); margin-top:10px; }
+.desktop-command-option { display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; padding:10px 12px; border:0; border-radius:8px; background:transparent; color:inherit; text-align:left; font:inherit; cursor:pointer; }
+.desktop-command-option.selected,.desktop-command-option:hover:not(:disabled) { background:color-mix(in srgb,var(--accent,#a78bfa) 16%,transparent); }
+.desktop-command-option:disabled { opacity:.45; cursor:default; }
+.desktop-command-label { display:flex; flex-direction:column; gap:2px; }
+.desktop-command-label small,.desktop-command-hint,.desktop-command-empty { font-size:12px; color:var(--text-dim,#999); }
+.desktop-command-hint { margin:12px 0 0; }
+.desktop-command-input:focus-visible,.desktop-command-close:focus-visible,.desktop-command-trigger:focus-visible { outline:2px solid var(--accent,#a78bfa); outline-offset:2px; }
+.desktop-shortcut-content { overflow:auto; min-height:0; }
+.desktop-shortcut-section h3 { font-size:13px; color:var(--text-dim,#999); margin:16px 0 10px; }
+.desktop-shortcut-section dl { display:grid; grid-template-columns:minmax(0,1fr) minmax(110px,1fr); gap:10px 18px; margin:0; font-size:13px; }
+.desktop-shortcut-section dd { margin:0; text-align:right; }
+.desktop-command-sr { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+
+/* One short entrance/exit, with no result staggering or scroll animation. */
+.desktop-command-backdrop,.desktop-command-dialog { transition:none; }
+.desktop-command-backdrop.is-closing .desktop-command-dialog { pointer-events:none; }
+@keyframes nyora-search-backdrop-in { from { opacity:0; } to { opacity:1; } }
+@keyframes nyora-search-in { from { opacity:0; transform:translateY(8px) scale(.985); } to { opacity:1; transform:none; } }
+@keyframes nyora-search-backdrop-out { from { opacity:var(--nyora-search-backdrop-from,1); } to { opacity:0; } }
+@keyframes nyora-search-out { from { opacity:var(--nyora-search-exit-opacity,1); transform:var(--nyora-search-exit-from,none); } to { opacity:0; transform:translateY(4px) scale(.992); } }
+@media (prefers-reduced-motion:no-preference) {
+  .desktop-command-backdrop { animation:nyora-search-backdrop-in 180ms ease-out both; }
+  .desktop-command-dialog { animation:nyora-search-in 200ms cubic-bezier(.2,.8,.2,1) both; }
+  .desktop-command-backdrop.is-closing { animation:nyora-search-backdrop-out 140ms ease-in both; }
+  .desktop-command-backdrop.is-closing .desktop-command-dialog { animation:nyora-search-out 140ms ease-in both; }
+  .desktop-command-option,.desktop-command-close { transition:background-color 120ms ease-out,color 120ms ease-out; }
+  .desktop-command-trigger { transition:background-color 150ms ease-out,color 150ms ease-out; }
+  .desktop-command-input { transition:border-color 150ms ease-out,background-color 150ms ease-out; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .desktop-command-backdrop,.desktop-command-dialog,.desktop-command-option,.desktop-command-close,.desktop-command-input,.desktop-command-trigger { animation:none; transition:none; }
+}

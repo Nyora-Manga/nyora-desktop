@@ -1,0 +1,44 @@
+# The service worker must never be cached, or clients keep an old version and
+# never pick up new deploys. (Cloudflare Pages was serving it max-age=14400.)
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# The prerendered Discover feed is regenerated on every deploy — revalidate so a
+# node never serves a snapshot from an older deploy, but allow the 304 so it
+# costs nothing when unchanged.
+/discover-feed.json
+  Cache-Control: no-cache
+
+# ---- Security headers ----------------------------------------------------
+#
+# script-src is 'self' with NO third-party origin: onnxruntime is vendored under
+# /vendor/ort/ precisely so this can hold. Never add a CDN back here — a dynamic
+# import() cannot carry an integrity attribute, so a CDN entry means unverified
+# code executing in a worker that sees every page image.
+#
+# connect-src allows raw.githubusercontent.com because EVERY on-device model —
+# the colorizer and all of the translator's detector/OCR artefacts — is now
+# fetched from Nyora's own commit-pinned GitHub mirrors. huggingface.co was
+# dropped once the last of them moved; the only Hugging Face host still listed
+# is *.hf.space, which is a parser-API mirror NODE, not a model source.
+#
+# Boot scripts are same-origin files; only style attributes require unsafe-inline.
+#
+# connect-src lists the LLM refinement defaults only. A user-configured custom
+# endpoint (Settings → Experimental → Translation) will be BLOCKED until its
+# host is added here — that is the intended trade-off, not a bug.
+/*
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob:; connect-src 'self' blob: data: https://*.hf.space https://api.nyora.xyz https://sync.nyora.xyz https://raw.githubusercontent.com https://translate.googleapis.com https://graphql.anilist.co https://api.mangabaka.dev https://*.fandom.com https://api.openai.com https://api.anthropic.com
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=(), usb=(), interest-cohort=()
+
+# Prevent edge HTML transformations from introducing inline scripts blocked by CSP.
+/
+  Cache-Control: no-cache, no-transform
+/index.html
+  Cache-Control: no-cache, no-transform
+/vendor/ort/*
+  Cross-Origin-Embedder-Policy: credentialless
+  Cross-Origin-Resource-Policy: same-origin

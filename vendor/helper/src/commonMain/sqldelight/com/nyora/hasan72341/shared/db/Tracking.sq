@@ -1,0 +1,58 @@
+-- Per-service tracking link + live state (canonical cross-platform schema).
+-- Mirrors the server `nyora_tracking` table and the iOS/Android clients.
+-- Dates and the LWW clock are stored as ISO-8601 TEXT (empty = unset) so they
+-- round-trip losslessly into backup/sync without a millis<->ISO conversion.
+CREATE TABLE IF NOT EXISTS tracking (
+    tracker_id TEXT NOT NULL,
+    manga_id TEXT NOT NULL,
+    remote_id TEXT NOT NULL DEFAULT '',
+    source_id TEXT NOT NULL DEFAULT '',
+    title TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT '',
+    score REAL NOT NULL DEFAULT 0.0,
+    last_read_chapter REAL NOT NULL DEFAULT 0.0,
+    last_read_volume INTEGER NOT NULL DEFAULT 0,
+    total_chapters INTEGER NOT NULL DEFAULT 0,
+    total_volumes INTEGER NOT NULL DEFAULT 0,
+    chapter_offset INTEGER NOT NULL DEFAULT 0,
+    started_at TEXT NOT NULL DEFAULT '',
+    finished_at TEXT NOT NULL DEFAULT '',
+    comment TEXT NOT NULL DEFAULT '',
+    updated_at TEXT NOT NULL DEFAULT '',
+    deleted_at TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (tracker_id, manga_id)
+);
+
+CREATE INDEX IF NOT EXISTS tracking_manga_idx ON tracking(manga_id);
+
+selectAll:
+SELECT * FROM tracking;
+
+selectLive:
+SELECT * FROM tracking WHERE deleted_at = '';
+
+selectByKey:
+SELECT * FROM tracking WHERE tracker_id = :tracker_id AND manga_id = :manga_id;
+
+selectForManga:
+SELECT * FROM tracking WHERE manga_id = :manga_id AND deleted_at = '';
+
+upsert:
+INSERT OR REPLACE INTO tracking (
+    tracker_id, manga_id, remote_id, source_id, title, status, score,
+    last_read_chapter, last_read_volume, total_chapters, total_volumes,
+    chapter_offset, started_at, finished_at, comment, updated_at, deleted_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+softDelete:
+UPDATE tracking SET deleted_at = :deleted_at, updated_at = :updated_at
+WHERE tracker_id = :tracker_id AND manga_id = :manga_id;
+
+deleteByKey:
+DELETE FROM tracking WHERE tracker_id = :tracker_id AND manga_id = :manga_id;
+
+countLive:
+SELECT COUNT(*) FROM tracking WHERE deleted_at = '';
+
+deleteAll:
+DELETE FROM tracking;

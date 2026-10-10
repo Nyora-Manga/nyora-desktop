@@ -1,0 +1,116 @@
+{
+  "name": "nyora-desktop",
+  "desktopName": "nyora-desktop.desktop",
+  "version": "0.3.0",
+  "private": true,
+  "type": "module",
+  "description": "Nyora manga reader for macOS, Windows and Linux \u2014 Electron desktop",
+  "scripts": {
+    "build:frontend": "node scripts/build-frontend.mjs",
+    "dev:frontend": "node scripts/dev-frontend.mjs",
+    "test:frontend": "node --test tests/frontend*.test.mjs",
+    "test:runtime": "node tests/runtime-smoke.mjs",
+    "test:runtime:native": "node tests/runtime-native-smoke.mjs",
+    "smoke:frontend": "node scripts/smoke-frontend.mjs",
+    "test": "npm run test:frontend && npm run test:policy && npm run test:helper",
+    "dev": "node scripts/dev-electron.mjs",
+    "build": "node scripts/package-electron.mjs --dir",
+    "start": "electron .",
+    "package:dir": "node scripts/package-electron.mjs --dir",
+    "package:mac": "node scripts/package-electron.mjs --mac --arm64",
+    "package:win": "node scripts/package-electron.mjs --win --arm64",
+    "package:linux": "node scripts/package-electron.mjs --linux --arm64",
+    "test:policy": "node --test electron/*.test.cjs",
+    "build:helper": "node scripts/package-helper.mjs",
+    "test:helper": "node --test tests/helper*.test.mjs",
+    "test:transport": "electron electron/transport-smoke.cjs",
+    "package:mac:x64": "node scripts/package-electron.mjs --mac --x64",
+    "package:win:x64": "node scripts/package-electron.mjs --win --x64",
+    "package:linux:x64": "node scripts/package-electron.mjs --linux --x64",
+    "setup:runtime": "node scripts/prepare-jdk.mjs",
+    "test:images": "node tests/runtime-images-smoke.mjs",
+    "test:catalogue": "node tests/runtime-catalogue-smoke.mjs",
+    "test:cf": "node tests/runtime-cf-smoke.mjs",
+    "test:cookies": "node tests/runtime-cookies-smoke.mjs",
+    "test:recovery": "node tests/runtime-recovery-smoke.mjs",
+    "test:offline": "node tests/runtime-offline-smoke.mjs",
+    "test:tracking": "node tests/runtime-tracking-smoke.mjs"
+  },
+  "devDependencies": {
+    "@material/web": "2.5.0",
+    "acorn": "8.18.0",
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3",
+    "esbuild": "0.28.2",
+    "playwright": "1.63.0"
+  },
+  "main": "electron/main.cjs",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "build": {
+    "appId": "app.nyora.desktop.preview",
+    "productName": "Nyora",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "!electron/**/*.test.cjs",
+      "!electron/transport-smoke.cjs",
+      "dist/**/*",
+      "package.json"
+    ],
+    "electronVersion": "44.5.1",
+    "artifactName": "Nyora-${version}-${os}-${arch}.${ext}",
+    "mac": {
+      "category": "public.app-category.entertainment",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "dist/icon-512.png",
+      "minimumSystemVersion": "14.0"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ],
+      "icon": "dist/icon-512.png"
+    },
+    "linux": {
+      "syncDesktopName": true,
+      "category": "Graphics",
+      "target": [
+        "AppImage",
+        "tar.gz"
+      ],
+      "icon": "dist/icon-512.png"
+    },
+    "publish": null,
+    "electronFuses": {
+      "runAsNode": false,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "onlyLoadAppFromAsar": true,
+      "enableEmbeddedAsarIntegrityValidation": true
+    },
+    "extraResources": [
+      {
+        "from": "resources/helper",
+        "to": "helper"
+      }
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nyora-Manga/nyora-desktop.git"
+  },
+  "homepage": "https://github.com/Nyora-Manga/nyora-desktop",
+  "bugs": {
+    "url": "https://github.com/Nyora-Manga/nyora-desktop/issues"
+  }
+}
