@@ -1,4 +1,4 @@
-// This file is copied to each distribution repository. No application source is needed.
+// Runs centrally through the reusable workflow with the calling mirror repository token.
 import {createHash} from 'node:crypto';
 const upstream='Nyora-Manga/nyora-desktop';
 const repository=process.env.GITHUB_REPOSITORY;
@@ -42,7 +42,7 @@ for(const target of wanted)for(const file of target.files){
 files.push({name:'SHA256SUMS.txt',bytes:Buffer.from(wanted.flatMap(t=>t.files.map(f=>`${f.sha256}  ${f.name}`)).sort().join('\n')+'\n')});
 files.push({name:'release-manifest.json',bytes:Buffer.from(JSON.stringify(manifest,null,2)+'\n')});
 const label={darwin:'macOS',win32:'Windows',linux:'Linux'}[platform];
-const body=`Nyora ${manifest.tag} for ${label} — Electron desktop.\n\nDownload **x64** for Intel/AMD 64-bit or **arm64** for Apple Silicon/ARM devices. Java and Chromium are bundled; no separate server is required.\n\n[Installation and migration instructions](https://github.com/${repository}/blob/HEAD/INSTALL.md) · [Canonical release with all six builds](https://github.com/${upstream}/releases/tag/${manifest.tag})\n\nThese files are copied unchanged and SHA-256 verified against the canonical release. The older native desktop implementation is deprecated. Builds are unsigned/not notarized; verify SHA256SUMS.txt.\n\nSource commit: ${manifest.commit}.\n`;
+const body=`Nyora ${manifest.tag} for ${label} — Electron desktop.\n\nDownload **x64** for Intel/AMD 64-bit or **arm64** for Apple Silicon/ARM devices. Java and Chromium are bundled; no separate server is required.\n\n[Installation and migration instructions](https://github.com/${upstream}/blob/main/docs/INSTALL.md) · [Canonical release with all six builds](https://github.com/${upstream}/releases/tag/${manifest.tag})\n\nThese files are copied unchanged and SHA-256 verified against the canonical release. The older native desktop implementation is deprecated. Builds are unsigned/not notarized; verify SHA256SUMS.txt.\n\nSource commit: ${manifest.commit}.\n`;
 if(!release)release=await api(repository,'/releases',{method:'POST',body:{tag_name:manifest.tag,name:`Nyora ${manifest.tag} — ${label}`,body,draft:true,prerelease:false}});
 for(const asset of release.assets||[])await api(repository,`/releases/assets/${asset.id}`,{method:'DELETE'});
 for(const file of files){

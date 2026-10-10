@@ -14,7 +14,7 @@ Each target builds its own JVM helper and trimmed runtime, runs JVM tests and na
 
 ## Distribution mirrors
 
-The `nyora-mac`, `nyora-windows` and `nyora-linux` default branches contain installation instructions and the mirror workflow. Their old native code remains in Git history and a `legacy/native-desktop` branch. Old native release workflows are removed from the default branch.
+The `nyora-mac`, `nyora-windows` and `nyora-linux` default branches contain only a README with download/source/installation pointers and a small workflow that calls this repository’s reusable mirror workflow. All release logic and installation documentation live here. Old native source branches and build workflows have been removed; historical commits and releases remain available.
 
 Each mirror's own `GITHUB_TOKEN` can write only that repository. It reads the canonical release, requires a complete six-target manifest, downloads its two architectures, verifies every SHA-256 hash and publishes both together. Public upstream releases require no cross-repository write token. Mirroring runs on a roughly 15-minute schedule or manual workflow dispatch; GitHub may delay scheduled runs. An already published release is never silently overwritten.
 
