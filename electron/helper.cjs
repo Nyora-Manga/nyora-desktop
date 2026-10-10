@@ -22,7 +22,7 @@ class ManagedHelper extends EventEmitter {
   #runDirectory;
   #relay;
 
-  constructor({ profileRoot, javaPath, jarPath, timeout = 20000, launcher, relay }) {
+  constructor({ profileRoot, javaPath, jarPath, timeout = process.platform === 'win32' ? 60000 : 20000, launcher, relay }) {
     super();
     for (const [name, value] of Object.entries({ profileRoot, javaPath, jarPath })) {
       if (typeof value !== 'string' || !path.isAbsolute(value)) throw new Error(`${name} must be absolute`);

@@ -11,13 +11,17 @@ export async function checkReadingRoom(page,base) {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(base+'/#/library');
     await page.locator('.library-welcome').waitFor();
+    await page.evaluate(() => document.fonts.ready);
     for(const [width,height] of [[1440,900],[860,600]]) {
       await page.setViewportSize({width,height});
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       const settings=await page.locator('#sidebar [data-route="settings"]').boundingBox();
       assert(settings && settings.y>=0 && settings.y+settings.height<=height,'Settings stays in the viewport');
       for(const label of ['Browse sources','Import comics']) {
         const box=await page.getByRole('button',{name:label,exact:true}).boundingBox();
-        assert(box && box.y>=0 && box.y+box.height<=height, label+' fits the empty Library');
+        const fits=box && box.y>=0 && box.y+box.height<=height;
+        if (!fits) await page.screenshot({path:resolve(evidence,'library-empty-failed-'+width+'.png'),animations:'disabled'});
+        assert(fits, label+' fits the empty Library: '+JSON.stringify({box,width,height}));
       }
       assert.equal(await page.locator('.desktop-main-nav [data-route]').count(),6);
       assert.equal(await page.locator('.desktop-community-links').isVisible(),false);
@@ -40,6 +44,7 @@ export async function checkReadingRoom(page,base) {
     const sourceList=page.locator('.reading-room-sources > .explore-sources-body');
     for(const [width,height] of [[1440,900],[860,600]]) {
       await page.setViewportSize({width,height});
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       const controls=page.locator('.reading-room-sources > :not(.explore-sources-body)');
       const positions=await controls.evaluateAll(nodes=>nodes.map(node=>node.getBoundingClientRect().y));
       await sourceList.hover();
@@ -64,6 +69,7 @@ export async function checkReadingRoom(page,base) {
     await page.locator('.ext-row').first().waitFor();
     for(const [width,height] of [[1280,800],[860,600],[390,844]]) {
       await page.setViewportSize({width,height});
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Catalog fits the viewport');
       assert(await page.locator('.ext-row .name').evaluateAll(nodes=>nodes.every(n=>n.scrollWidth<=n.clientWidth+1)),'Source names wrap without truncation');
       assert(await page.locator('.ext-row').evaluateAll(rows=>rows.every(row=>{
@@ -88,6 +94,7 @@ export async function checkReadingRoom(page,base) {
     const detail = page.locator('.reading-settings-detail');
     for (const [width,height] of [[1440,900],[1024,600]]) {
       await page.setViewportSize({width,height});
+      await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
       await detail.evaluate(node => { node.scrollTop = 0; });
       const before = await categories.boundingBox();
       await detail.hover();

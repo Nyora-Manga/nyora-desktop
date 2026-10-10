@@ -101,10 +101,21 @@ export async function verifyBundledHelper(root) {
   const relay = new SourceRelay({ catalogueLookup: () => undefined, sessionForSource: () => { throw new Error('Source traffic is forbidden during runtime validation'); } });
   let helper;
   let failure;
+  let startupOutput = '';
+  const diagnosticSecrets = new Set();
   try {
     const credentials = await relay.start();
     helper = new ManagedHelper({ profileRoot: join(directory, 'profile'), javaPath: join(root, 'jre/bin', javaName), jarPath: join(root, 'nyora-helper.jar'),
-      relay: { url: `${credentials.baseUrl}/fetch`, token: credentials.token }, timeout: 30000 });
+      relay: { url: `${credentials.baseUrl}/fetch`, token: credentials.token }, timeout: process.platform === 'win32' ? 90000 : 30000,
+      launcher(file, args, options) {
+        const child = spawn(file, args, options);
+        const secrets = Object.entries(options.env).filter(([key, value]) => value && /TOKEN|SECRET|PASSWORD|KEY/i.test(key)).map(([, value]) => value);
+        secrets.forEach(value => diagnosticSecrets.add(value));
+        const collect = bytes => { startupOutput = (startupOutput + String(bytes)).slice(-16384); };
+        child.stdout?.on('data', collect); child.stderr?.on('data', collect);
+        return child;
+      },
+    });
     const health = await helper.start();
     const created = JSON.parse((await helper.request('/library/categories/create?title=Runtime%20validation', { method: 'POST' })).bytes);
     assert.ok(Number.isSafeInteger(created.id));
@@ -113,7 +124,12 @@ export async function verifyBundledHelper(root) {
     await helper.stop(); await helper.start();
     assert.ok((await read()).some(item => item.id === created.id && item.title === 'Runtime validation'));
     return { protocol: health.protocol, revision: health.revision, sourceTransport: health.sourceTransport, sqliteWrite: true, restart: true };
-  } catch (error) { failure = error; throw error; }
+  } catch (error) {
+    failure = error;
+    for (const secret of diagnosticSecrets) startupOutput = startupOutput.replaceAll(secret, '[redacted]');
+    if (startupOutput) console.error("Disposable helper diagnostic:\n" + startupOutput.slice(-8192));
+    throw error;
+  }
   finally {
     const cleanup = await Promise.allSettled([helper?.stop(), relay.stop()]);
     try { await rm(directory, { recursive: true, force: true }); }
