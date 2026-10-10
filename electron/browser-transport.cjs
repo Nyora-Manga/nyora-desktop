@@ -35,6 +35,7 @@ class BrowserContextTransport {
   #sessions = new Map();
   #closed = false;
   #closingSources = new Set();
+  #drains = new Set();
   constructor({ sessionForSource, createWindow, maxContexts = 16, maxActive = 8, maxResponseBytes = 32 * 1024 * 1024, maxRequestBytes = 1024 * 1024, timeoutMs = 30000 } = {}) {
     if (typeof sessionForSource !== 'function') throw new TypeError('Trusted source sessions required');
     for (const value of [maxContexts, maxActive, maxResponseBytes, maxRequestBytes, timeoutMs]) if (!Number.isSafeInteger(value) || value < 1) throw new TypeError('Positive transport bounds required');
@@ -104,7 +105,31 @@ class BrowserContextTransport {
     if (!context || context.destroyed) return;
     context.destroyed = true;
     if (this.#contexts.get(context.key) === context) this.#contexts.delete(context.key);
-    if (context.window && !context.window.isDestroyed()) context.window.destroy();
+    const destroyWindow = () => { if (context.window && !context.window.isDestroyed()) context.window.destroy(); };
+    const active = context.active;
+    if (active?.networkDone && !active.networkEnded && !context.window?.isDestroyed()) {
+      // Detaching DevTools by destroying its window can resume an intercepted
+      // request on Linux. Abort in the renderer first and wait for Chromium's
+      // network completion receipt before allowing cookies to be cleared.
+      const drain = { sourceId: context.sourceId };
+      context.teardown = (async () => {
+        let timer;
+        try {
+          const timeout = new Promise((_, reject) => {
+            timer = setTimeout(() => reject(problem('TRANSPORT_DRAIN_TIMEOUT')), 3000);
+          });
+          await Promise.race([
+            (async () => {
+              await context.window.webContents.executeJavaScriptInIsolatedWorld(WORLD, [{ code: 'globalThis.__nyoraRequest?.abort();' }]);
+              await active.networkDone.promise;
+            })(), timeout,
+          ]);
+        } finally { clearTimeout(timer); destroyWindow(); }
+      })();
+      drain.pending = context.teardown;
+      this.#drains.add(drain);
+      context.teardown.then(() => this.#drains.delete(drain), () => {});
+    } else destroyWindow();
     for (const owner of context.queue.splice(0)) {
       context.owners.delete(owner); owner.context = undefined;
       if (requeue && !owner.controller.signal.aborted && !this.#closed && !this.#closingSources.has(owner.sourceId)) {
@@ -170,6 +195,11 @@ class BrowserContextTransport {
     contents.debugger.attach('1.3');
     context.debug = contents.debugger;
     context.debug.on('message', (_event, method, value) => {
+      if (method === 'Network.loadingFinished' || method === 'Network.loadingFailed') {
+        const owner = context.networkOwners?.get(value.requestId);
+        if (owner) { owner.networkEnded = true; owner.networkDone.resolve(); context.networkOwners.delete(value.requestId); }
+        return;
+      }
       if (method !== 'Fetch.requestPaused') return;
       this.#intercept(context, value).catch(error => {
         if (context.active) context.active.failure = error;
@@ -218,6 +248,11 @@ class BrowserContextTransport {
       owner.responseHeaders = headers;
       await context.debug.sendCommand('Fetch.continueResponse', { requestId }); return;
     }
+    if (value.networkId) {
+      owner.networkDone ||= Promise.withResolvers();
+      context.networkOwners ||= new Map();
+      context.networkOwners.set(value.networkId, owner);
+    }
     // Let Chromium assemble Cookie from its current jar. The paused request's
     // Cookie header can contain ordinary cookies without its partitioned CHIPS
     // cookies; explicitly replaying it suppresses the native credentials merge.
@@ -261,7 +296,10 @@ class BrowserContextTransport {
       catch (error) {
         if (owner.redirect) return new Response(null, owner.redirect);
         throw owner.failure || owner.controller.signal.reason || error;
-      } finally { if (context.active === owner) context.active = undefined; }
+      } finally {
+        if (context.teardown) await context.teardown;
+        if (context.active === owner) context.active = undefined;
+      }
       if (owner.controller.signal.aborted) throw owner.controller.signal.reason;
       if (owner.failure) throw owner.failure;
       if (owner.redirect) return new Response(null, owner.redirect);
@@ -277,6 +315,7 @@ class BrowserContextTransport {
       for (const owner of owners) owner.cancel();
       for (const context of [...this.#contexts.values()]) if (context.sourceId === sourceId) this.#destroy(context);
       await Promise.allSettled(owners.map(value => value.pending));
+      await Promise.all([...this.#drains].filter(value => value.sourceId === sourceId).map(value => value.pending));
       await this.#sessions.get(sourceId)?.closeAllConnections();
     } finally { this.#closingSources.delete(sourceId); }
   }

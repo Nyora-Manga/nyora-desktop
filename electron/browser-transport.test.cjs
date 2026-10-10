@@ -34,3 +34,15 @@ test('source close drains its pending contexts without cancelling another source
 test('saturated context close is safe before raw session resolution and cannot resurrect closed frames',async()=>{
  const raw=Promise.withResolvers();const transport=new BrowserContextTransport({sessionForSource:()=>raw.promise,maxContexts:1,createWindow:()=>{throw Error('Closed context must not materialize');}});const first=transport.fetch('data:first','https://example.org/slow',options);first.catch(()=>{});const second=transport.fetch('data:second','https://example.org/next',options);second.catch(()=>{});await transport.closeSource('data:second');await assert.rejects(second,/TRANSPORT_CONTEXT_LIMIT/);await transport.close();await assert.rejects(first);raw.resolve({closeAllConnections:async()=>{}});await tick();
 });
+
+test('active reset waits for the matching native network cancellation before destroying its frame',async()=>{
+ const hold=Promise.withResolvers();const {transport,windows}=fixture(code=>code==='globalThis.__nyoraRequest?.abort();'?Promise.resolve():hold.promise);
+ const pending=transport.fetch('data:one','https://example.org/slow',options);pending.catch(()=>{});await tick();await tick();
+ const debug=windows[0].webContents.debugger;
+ debug.emit('message',{},'Fetch.requestPaused',{requestId:'fetch-one',networkId:'network-one',request:{url:'https://example.org/slow',headers:{}},resourceType:'Fetch'});
+ await tick();let closed=false;const closing=transport.closeSource('data:one').then(()=>{closed=true;});
+ await tick();assert.equal(windows[0].destroyed,false);assert.equal(closed,false);
+ debug.emit('message',{},'Network.loadingFailed',{requestId:'other-network'});await tick();assert.equal(closed,false);
+ debug.emit('message',{},'Network.loadingFailed',{requestId:'network-one'});
+ await closing;await assert.rejects(pending);assert.equal(windows[0].destroyed,true);await transport.close();
+});
