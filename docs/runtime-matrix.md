@@ -1,5 +1,9 @@
 # Desktop Chromium runtime verification
 
+The 3.x release workflow validates macOS, Windows and Linux on native x64 and ARM64 runners. Each [published central release](https://github.com/Nyora-Manga/nyora-desktop/releases) includes six `runtime-validation-PLATFORM-ARCH.json` reports. See [RELEASING.md](RELEASING.md) for the current build gates and [INSTALL.md](INSTALL.md) for installation. A configured target is publishable only after its complete native CI job passes.
+
+The preview evidence below is historical; it describes the local 0.x development runs before six-platform CI was introduced.
+
 The active shell is Electron 44.5.1, selected after the user changed the framework. Tauri/CEF is a superseded experiment; its compile evidence and blockers are recorded in the internal Task0 native report. Existing Electron data and encrypted sessions are retained. Older native-client profiles are not read or automatically converted.
 
 ## Active baseline
@@ -19,7 +23,7 @@ The active shell is Electron 44.5.1, selected after the user changed the framewo
 | Production diagnostics |DevTools disabled; unsafe sandbox/security/remote-debugging/inspector startup switches rejected |
 | Smoke diagnostics |Explicit unpackaged `--nyora-smoke`, existing absolute temporary profile, loopback CDP port1024–65535; refused in packaged builds |
 
-## Evidence and platform gates
+## Historical preview evidence and platform gates
 
 | Target | Build/package | Installed/offline launch | Browser/native IPC | Source isolation/restart/reset | Sandbox/signing |
 | --- | --- | --- | --- | --- | --- |
