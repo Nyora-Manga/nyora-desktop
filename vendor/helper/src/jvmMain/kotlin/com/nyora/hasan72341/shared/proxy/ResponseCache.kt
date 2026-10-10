@@ -2,6 +2,9 @@ package com.nyora.hasan72341.shared.proxy
 
 import com.nyora.hasan72341.shared.HelperProfile
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.StandardCopyOption
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledFuture
@@ -168,7 +171,13 @@ internal class ResponseCacheStore(
                     w.newLine()
                 }
             }
-            tmp.renameTo(snapshotFile)
+            // File.renameTo silently refuses an existing destination on Windows.
+            // Replace the completed snapshot atomically where the filesystem supports it.
+            try {
+                Files.move(tmp.toPath(), snapshotFile.toPath(), StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+            } catch (_: AtomicMoveNotSupportedException) {
+                Files.move(tmp.toPath(), snapshotFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            }
         } catch (_: Throwable) { /* best-effort persistence */ }
     }
 }
