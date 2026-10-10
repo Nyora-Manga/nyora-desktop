@@ -32,7 +32,7 @@ test('verified AniList connection is encrypted, metadata-only and durable with i
   assert.equal(state.trackers[0].links['exact-native-title'], 123);
   assert(!JSON.stringify(state).includes(token));
   const file = path.join(f.directory, 'tracking.json'), disk = await fs.readFile(file, 'utf8');
-  assert(!disk.includes(token)); assert.equal((await fs.stat(file)).mode & 0o777, 0o600);
+  assert(!disk.includes(token)); if (process.platform !== 'win32') assert.equal((await fs.stat(file)).mode & 0o777, 0o600);
   const reopened = new TrackingBroker({ directory: f.directory, encryption: f.encryption, fetch: f.fetch });
   assert.deepEqual(await reopened.request('tracking.capabilities'), state); await reopened.close();
   assert.equal(f.calls[0].url, 'https://graphql.anilist.co'); assert.equal(f.calls[0].redirect, 'error');

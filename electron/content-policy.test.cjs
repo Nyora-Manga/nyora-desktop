@@ -6,7 +6,7 @@ const path = require('node:path');
 const { CONTENT_SECURITY_POLICY, normalizeAiEndpoint } = require('./content-policy.cjs');
 const directives = Object.fromEntries(CONTENT_SECURITY_POLICY.split(';').map(part => part.trim().split(/\s+/)).filter(part => part[0]).map(([key, ...values]) => [key, values]));
 test('reader model policy covers current pinned sources without enabling old hosts or arbitrary connections', () => {
-  const web = path.resolve(__dirname, '../../nyora-web/web/core');
+  const web = path.resolve(__dirname, '../vendor/web/web/core');
   for (const file of ['colorize/model.js', 'translate/tl-worker.js']) {
     const source = fs.readFileSync(path.join(web, file), 'utf8');
     const models = source.match(/https:\/\/raw\.githubusercontent\.com\/Nyora-Manga\/[^'\s]+/g);

@@ -15,7 +15,7 @@ test('window state persists normal bounds and maximized state across separate in
     Object.assign(window, { isDestroyed: () => false, isMinimized: () => false, isMaximized: () => true, getNormalBounds: () => ({ x: 100, y: 40, width: 1000, height: 700 }) });
     state.watch(window); window.emit('resize'); await state.close();
     assert.deepEqual(await new WindowState(file).restore(displays), { x: 100, y: 40, width: 1000, height: 700, maximized: true });
-    assert.equal((await fs.stat(file)).mode & 0o777, 0o600);
+    if (process.platform !== 'win32') assert.equal((await fs.stat(file)).mode & 0o777, 0o600);
   } finally { await fs.rm(folder, { recursive: true, force: true }); }
 });
 

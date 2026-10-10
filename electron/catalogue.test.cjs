@@ -108,7 +108,7 @@ test('read-only Madara browse/chapter requests accept only known paths and form 
 });
 
 test('actual bundled catalogue compiles all source identities without broad origin inference', () => {
-  const raw = JSON.parse(readFileSync(join(__dirname, '../../nyora-shared-datadriven/data/catalogue.json')));
+  const raw = JSON.parse(readFileSync(join(__dirname, '../vendor/helper/data/catalogue.json')));
   const compiled = compileCatalogue(raw);
   assert.equal(compiled.sources.length, raw.sources.length);
   assert.deepEqual(new Set(compiled.sources.map(item => item.sourceId)), new Set(raw.sources.map(item => `data:${item.id.toLowerCase()}`)),
