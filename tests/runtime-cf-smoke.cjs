@@ -1,4 +1,5 @@
 'use strict';
+const { sameCertificate } = require('./runtime-certificates.cjs');
 // Offline, disposable native acceptance. Never imported by the application.
 const {app,BrowserWindow,session}=require('electron');
 const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const https=require('node:https');const http=require('node:http');const net=require('node:net');const {spawnSync}=require('node:child_process');
@@ -36,7 +37,7 @@ const server=https.createServer({key:fs.readFileSync(key),cert},async(req,res)=>
 const proxy=http.createServer();proxy.on('connect',(req,incoming,head)=>{connections.push(req.url);if(!hosts.has(req.url.split(':')[0])){incoming.end('HTTP/1.1 403 Forbidden\r\n\r\n');return;}const outgoing=net.connect(server.address().port,'127.0.0.1',()=>{incoming.write('HTTP/1.1 200 Connection Established\r\n\r\n');if(head.length)outgoing.write(head);incoming.pipe(outgoing);outgoing.pipe(incoming);});for(const socket of[incoming,outgoing]){sockets.add(socket);socket.on('close',()=>sockets.delete(socket));}incoming.on('error',()=>outgoing.destroy());outgoing.on('error',()=>incoming.destroy());});
 const listen=s=>new Promise(resolve=>s.listen(0,'127.0.0.1',resolve));
 const deadline=(promise,ms=3000)=>Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error('FIXTURE_DEADLINE')),ms).unref())]);
-async function sourceSession(id){if(!sessions.has(id)){const s=session.fromPartition(`persist:${id}`);await s.setProxy({mode:'fixed_servers',proxyRules:`https=127.0.0.1:${proxy.address().port}`});s.setCertificateVerifyProc((v,cb)=>cb(hosts.has(v.hostname)&&v.certificate.data.trim()===cert.trim()?0:-2));sessions.set(id,s);}return sessions.get(id);}
+async function sourceSession(id){if(!sessions.has(id)){const s=session.fromPartition(`persist:${id}`);await s.setProxy({mode:'fixed_servers',proxyRules:`https=127.0.0.1:${proxy.address().port}`});s.setCertificateVerifyProc((v,cb)=>cb(hosts.has(v.hostname)&&sameCertificate(v.certificate.data, cert)?0:-2));sessions.set(id,s);}return sessions.get(id);}
 async function verify(id,origin,target=`${origin}/verify`){verification.opened(id,target);const w=new BrowserWindow({show:false,webPreferences:{session:await sourceSession(id),sandbox:true,contextIsolation:true,nodeIntegration:false}});windows.push(w);await w.loadURL(target);return w;}
 async function solve(w){await w.webContents.executeJavaScript('document.getElementById("verify").click()');while(await w.webContents.executeJavaScript('document.title')!=='Solved')await new Promise(r=>setTimeout(r,10));}
 const lookup=createCatalogueLookup(compileCatalogue({sources:[{id:'one',engine:'madara',domain:'example.org'},{id:'two',engine:'madara',domain:'example.org'},{id:'three',engine:'madara',domain:'example.org'}]}));const verification=new SourceVerification(lookup);

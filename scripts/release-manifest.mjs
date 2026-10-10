@@ -3,6 +3,11 @@ import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 export const platforms=['darwin','win32','linux'];
 export const architectures=['x64','arm64'];
+export function canonicalArtifactName(name, {platform, arch}) {
+ // electron-builder uses the AppImage convention x86_64 for this one format.
+ return platform==='linux' && arch==='x64'
+  ? name.replace(/-linux-x86_64\.AppImage$/, '-linux-x64.AppImage') : name;
+}
 export async function verifyRelease(directory,{commit}={}){
  const targets=[];const names=new Set();let version;
  for(const platform of platforms)for(const arch of architectures){

@@ -1,4 +1,5 @@
 'use strict';
+const { sameCertificate } = require('./runtime-certificates.cjs');
 // Actual native helper -> authenticated production relay -> Chromium HTTPS ->
 // signed local HTTP -> renderer image decode. Only offline synthetic Atsu JSON
 // and PNG are served; no source account, user profile or public network is used.
@@ -102,7 +103,7 @@ app.whenReady().then(async () => {
   await listen(proxy);
   sourceSession = session.fromPartition('persist:source-images-fixture');
   await sourceSession.setProxy({ mode: 'fixed_servers', proxyRules: `https=127.0.0.1:${proxy.address().port}` });
-  sourceSession.setCertificateVerifyProc((request, callback) => callback(hosts.has(request.hostname) && request.certificate.data.trim() === cert.trim() ? 0 : -2));
+  sourceSession.setCertificateVerifyProc((request, callback) => callback(hosts.has(request.hostname) && sameCertificate(request.certificate.data, cert) ? 0 : -2));
   await sourceSession.cookies.set({ url: 'https://atsu.moe/', domain: '.atsu.moe', path: '/', name: 'nyora_image_fixture', value: 'present', secure: true });
   const manifest = JSON.parse(fs.readFileSync(path.join(resources, 'manifest.json')));
   assert.equal(manifest.arch, process.arch, 'Helper architecture must match native Electron');

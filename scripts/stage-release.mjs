@@ -1,6 +1,7 @@
 import {readFile,readdir,mkdir,copyFile,writeFile} from 'node:fs/promises';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
+import {canonicalArtifactName} from './release-manifest.mjs';
 const {version}=JSON.parse(await readFile('package.json','utf8'));
 const {platform,arch}=process;
 const validationName=`runtime-validation-${platform}-${arch}.json`;
@@ -8,11 +9,12 @@ const validation=JSON.parse(await readFile(join('release',validationName),'utf8'
 if(validation.platform!==platform||validation.arch!==arch||!validation.frontend?.passed)throw new Error('Missing target validation');
 const destination='release-assets';await mkdir(destination,{recursive:true});
 const files=[];
-for(const name of await readdir('release')){
+for(const originalName of await readdir('release')){
+ const name=canonicalArtifactName(originalName,{platform,arch});
  if(!name.startsWith(`Nyora-${version}-`)||!name.includes(`-${arch}.`)||!/(\.dmg|\.zip|\.exe|\.AppImage|\.tar\.gz)$/.test(name))continue;
- const data=await readFile(join('release',name));
+ const data=await readFile(join('release',originalName));
  files.push({name,bytes:data.length,sha256:createHash('sha256').update(data).digest('hex')});
- await copyFile(join('release',name),join(destination,name));
+ await copyFile(join('release',originalName),join(destination,name));
 }
 const primary={darwin:'.dmg',win32:'.exe',linux:'.AppImage'}[platform];
 if(!files.some(f=>f.name.endsWith(primary)))throw new Error('Primary installer missing');

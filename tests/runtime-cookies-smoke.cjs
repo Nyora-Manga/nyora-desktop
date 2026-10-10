@@ -1,4 +1,5 @@
 'use strict';
+const { sameCertificate } = require('./runtime-certificates.cjs');
 // Disposable offline native cookie durability acceptance; never imported by main.
 const { app, BrowserWindow, session } = require('electron');
 const assert = require('node:assert/strict');
@@ -73,7 +74,7 @@ async function sourceSession(sourceId) {
     const ses = session.fromPartition(`persist:source-${sourceKey(sourceId)}`, { cache: true });
     await ses.setProxy({ mode: 'fixed_servers', proxyRules: `https=127.0.0.1:${proxy.address().port}` });
     ses.setCertificateVerifyProc((request, callback) => callback(request.hostname === 'example.org'
-      && request.certificate.data.trim() === cert.trim() ? 0 : -2));
+      && sameCertificate(request.certificate.data, cert) ? 0 : -2));
     sessions.set(sourceId, ses);
     if (CookiePersistence) savers.set(sourceId, new CookiePersistence(ses, sourceId === 'data:two' ? { debounceMs: 5000 } : {}));
   }
