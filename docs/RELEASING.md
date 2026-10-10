@@ -4,7 +4,7 @@
 
 ## Versioning
 
-The checked-in `package.json` contains a release baseline, initially `0.3.0`. CI adds `GITHUB_RUN_NUMBER` to its patch number and writes the same version into the npm lockfile and bundled app. Thus run 1 produces `0.3.1` / tag `v0.3.1`; rerunning that run retains its version. When changing the major/minor line, change the baseline in both package files. Release notes identify the exact source commit.
+The checked-in `package.json` contains a release baseline, initially `3.0.0`. CI adds `GITHUB_RUN_NUMBER` to its patch number and writes the same version into the npm lockfile and bundled app. Thus run 1 produces `3.0.1` / tag `v3.0.1`; rerunning that run retains its version. When changing the major/minor line, change the baseline in both package files. Release notes identify the exact source commit.
 
 ## Build gates
 

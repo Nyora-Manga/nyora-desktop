@@ -1,7 +1,7 @@
 {
   "name": "nyora-desktop",
   "desktopName": "nyora-desktop.desktop",
-  "version": "0.3.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
   "description": "Nyora manga reader for macOS, Windows and Linux \u2014 Electron desktop",
