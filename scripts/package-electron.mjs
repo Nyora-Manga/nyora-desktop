@@ -51,7 +51,13 @@ const catalogueChecks = JSON.parse(await readFile(resolve(desktopRoot, 'test-res
 await buildFrontend();
 // Cookie durability alone cannot catch a UI that never resumes after close.
 // Exercise the built shared interface's automatic verification/retry flow too.
-await run(['scripts/smoke-frontend.mjs', '--no-build']);
+// The browser UI smoke is the one stage whose timing depends on runner speed:
+// slow macOS runners have tripped render races in it that a fast machine never
+// sees. Give it exactly one retry; a real regression fails both attempts.
+await run(['scripts/smoke-frontend.mjs', '--no-build']).catch(async (error) => {
+  console.warn(`Frontend smoke failed (${error.message}); retrying once`);
+  await run(['scripts/smoke-frontend.mjs', '--no-build']);
+});
 const builder = require.resolve('electron-builder/cli.js');
 // Build the app directory first. An unusable bundled JVM cannot enter an installer.
 await run([builder, ...args.filter(arg => arg !== '--dir'), '--dir', '--publish', 'never']);

@@ -15,7 +15,9 @@ export async function checkReadingRoom(page,base) {
     for(const [width,height] of [[1440,900],[860,600]]) {
       await page.setViewportSize({width,height});
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-      const settings=await page.locator('#sidebar [data-route="settings"]').boundingBox();
+      const settingsLink=page.locator('#sidebar [data-route="settings"]');
+      await settingsLink.waitFor();
+      const settings=await settingsLink.boundingBox();
       assert(settings && settings.y>=0 && settings.y+settings.height<=height,'Settings stays in the viewport');
       for(const label of ['Browse sources','Import comics']) {
         // Wait for the empty state to render: slow runners measured it as null.
