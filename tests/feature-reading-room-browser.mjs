@@ -18,7 +18,10 @@ export async function checkReadingRoom(page,base) {
       const settings=await page.locator('#sidebar [data-route="settings"]').boundingBox();
       assert(settings && settings.y>=0 && settings.y+settings.height<=height,'Settings stays in the viewport');
       for(const label of ['Browse sources','Import comics']) {
-        const box=await page.getByRole('button',{name:label,exact:true}).boundingBox();
+        // Wait for the empty state to render: slow runners measured it as null.
+        const button=page.getByRole('button',{name:label,exact:true});
+        await button.waitFor();
+        const box=await button.boundingBox();
         const fits=box && box.y>=0 && box.y+box.height<=height;
         if (!fits) await page.screenshot({path:resolve(evidence,'library-empty-failed-'+width+'.png'),animations:'disabled'});
         assert(fits, label+' fits the empty Library: '+JSON.stringify({box,width,height}));
