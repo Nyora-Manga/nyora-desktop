@@ -39,8 +39,12 @@ export async function checkLibraryTools(page, base) {
     await page.getByRole('button', { name: 'View history', exact: true }).waitFor();
     assert.match(await page.locator('.library-resume-progress').textContent(), /Page 10/);
     const before = await contentCalls();
-    await page.locator('.library-favourites .grid-sentinel').scrollIntoViewIfNeeded();
-    await page.waitForFunction(() => document.querySelectorAll('.library-favourites .grid .card').length > 24);
+    // The lazy grid replaces its sentinel as chunks render, so a held element can
+    // detach mid-scroll on slow runners. Re-query and scroll on every poll.
+    await page.waitForFunction(() => {
+      document.querySelector('.library-favourites .grid-sentinel')?.scrollIntoView({ block: 'end' });
+      return document.querySelectorAll('.library-favourites .grid .card').length > 24;
+    });
     assert((await cards.count()) <= 60, 'lazy grid must not duplicate titles');
 
     await search.fill('blue');
