@@ -1,33 +1,38 @@
 'use strict';
 
-// Only the currently bundled reader's pinned models and named provider routes.
-// ONNX JavaScript/WASM remains self-hosted; old Hugging Face cache keys do not
-// authorize any network access. A model revision requires a policy revision.
-const READER_CONNECTIONS = Object.freeze([
-  'https://raw.githubusercontent.com/Nyora-Manga/manga-colorization-v2-onnx/044b94a18a5a2e92cb320d8d69cc7583941d3678/',
-  'https://raw.githubusercontent.com/Nyora-Manga/nyora-translate-models/cf33c2959f02f5a48ad2bc98bd80b0b50b8632ec/',
-  'https://translate.googleapis.com/translate_a/single',
-  'https://api.openai.com/v1/chat/completions',
-  'https://api.anthropic.com/v1/messages',
-  'https://*.fandom.com/api.php',
-]);
+// The reader may connect anywhere: page CDNs, any translation/LLM endpoint
+// (including a local server such as Ollama or LM Studio), wikis and catalogue
+// APIs. Responses are opened to this origin by cors.cjs. Scripts stay 'self'.
 const CONTENT_SECURITY_POLICY = [
   "default-src 'self'", "script-src 'self' 'wasm-unsafe-eval'",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com", "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
-  `connect-src 'self' https://api.nyora.xyz https://graphql.anilist.co https://api.mangabaka.dev https://api.mangabaka.org ${READER_CONNECTIONS.join(' ')}`,
+  "connect-src 'self' https: http://localhost:* http://127.0.0.1:*",
   "worker-src 'self' blob:", "object-src 'none'", "base-uri 'self'", "frame-src 'none'", "frame-ancestors 'none'", "form-action 'none'",
 ].join('; ');
 
+// Any HTTPS endpoint, or plain HTTP on this machine (local LLM servers). The
+// reader appends /chat/completions (OpenAI-compatible) or /v1/messages
+// (Anthropic) itself, so store the API base.
 function normalizeAiEndpoint(value, { legacy = false, provider } = {}) {
   if (typeof value !== 'string') throw new Error('AI endpoint must be text');
   if (value === '') return '';
-  const normalized = value.replace(/\/$/, '');
-  if (normalized === 'https://api.openai.com/v1' && (!provider || provider === 'openai')) return normalized;
+  let url;
+  try { url = new URL(value.trim()); } catch { url = null; }
+  const local = url && url.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname);
+  if (!url || !(url.protocol === 'https:' || local) || url.username || url.password || url.hash) {
+    if (legacy) return '';
+    throw new Error('AI endpoint must be an https:// URL, or http://localhost for a local server.');
+  }
+  const normalized = url.href.replace(/\/+$/, '');
   // The bundled Anthropic reader appends /v1/messages itself. Accept its default
   // origin and the conventional API base input, then persist the working form.
-  if (['https://api.anthropic.com', 'https://api.anthropic.com/v1'].includes(normalized) && (!provider || provider === 'anthropic')) return 'https://api.anthropic.com';
-  if (legacy) return '';
-  throw new Error('Custom AI endpoints are not yet supported on desktop. Leave the endpoint empty to use the selected provider.');
+  const anthropic = ['https://api.anthropic.com', 'https://api.anthropic.com/v1'].includes(normalized);
+  // One built-in provider's endpoint under the other provider can never work.
+  if ((anthropic && provider === 'openai') || (normalized === 'https://api.openai.com/v1' && provider === 'anthropic')) {
+    if (legacy) return '';
+    throw new Error("That is the other provider's endpoint. Leave it empty to use the selected provider.");
+  }
+  return anthropic ? 'https://api.anthropic.com' : normalized;
 }
 module.exports = { CONTENT_SECURITY_POLICY, normalizeAiEndpoint };

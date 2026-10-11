@@ -76,8 +76,8 @@ class DevicePreferences {
       if (!metadata.isFile() || metadata.size > 65536) throw new Error('Invalid native preferences file');
       const stored = JSON.parse(await fs.readFile(this.file, 'utf8'));
       if (stored.version !== 1 || !plain(stored.preferences)) throw new Error('Unsupported native preferences file');
-      // Previous releases accepted custom endpoints that their CSP then blocked.
-      // Use the selected provider's default while retaining its model and key.
+      // An endpoint that is no longer valid (e.g. the other provider's) falls
+      // back to the selected provider's default, keeping its model and key.
       const preferences = { ...stored.preferences };
       if (Object.hasOwn(preferences, 'aiEndpoint')) preferences.aiEndpoint = normalizeAiEndpoint(preferences.aiEndpoint, { legacy: true, provider: preferences.aiProvider || 'openai' });
       validatePatch(preferences);
@@ -100,8 +100,10 @@ class DevicePreferences {
       const previous = await this.#read();
       const next = { ...previous, ...patch };
       if (Object.hasOwn(next, 'aiEndpoint')) {
-        const switching = Object.hasOwn(patch, 'aiProvider') && !Object.hasOwn(patch, 'aiEndpoint');
-        next.aiEndpoint = normalizeAiEndpoint(next.aiEndpoint, { provider: next.aiProvider || 'openai', legacy: switching });
+        // Switching provider starts from its default: an endpoint chosen for the
+        // other provider's API format would not work with this one.
+        const switching = Object.hasOwn(patch, 'aiProvider') && !Object.hasOwn(patch, 'aiEndpoint') && patch.aiProvider !== previous.aiProvider;
+        next.aiEndpoint = switching ? '' : normalizeAiEndpoint(next.aiEndpoint, { provider: next.aiProvider || 'openai' });
       }
       if (patch.reader) next.reader = { ...(previous.reader || {}), ...patch.reader };
       const stored = { version: 1, preferences: { ...next } };

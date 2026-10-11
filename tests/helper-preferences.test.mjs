@@ -35,21 +35,23 @@ test('a key is rejected without OS encryption and never stored as plaintext', as
   await assert.rejects(new DevicePreferences(directory, { ...encryption, getSelectedStorageBackend: () => 'basic_text' }).get(), /unavailable/);
 });
 
-test('desktop AI endpoint saves reject custom hosts and normalize Anthropic without duplicating v1', async t => {
+test('desktop AI endpoint saves keep custom hosts and normalize Anthropic without duplicating v1', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'nyora-preferences-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
   const prefs = new DevicePreferences(directory);
-  assert.throws(() => prefs.save({ aiEndpoint: 'https://private-custom.example.org/v1' }), /Custom AI endpoints are not yet supported on desktop/);
+  await prefs.save({ aiProvider: 'openai', aiEndpoint: 'https://private-custom.example.org/v1/' });
+  assert.equal((await prefs.get()).aiEndpoint, 'https://private-custom.example.org/v1');
+  assert.throws(() => prefs.save({ aiEndpoint: 'http://192.168.1.5/v1' }), /https:\/\/ URL/);
   await prefs.save({ aiProvider: 'anthropic', aiEndpoint: 'https://api.anthropic.com/v1/' });
   assert.equal((await prefs.get()).aiEndpoint, 'https://api.anthropic.com');
   await prefs.save({ aiProvider: 'openai', aiEndpoint: 'https://api.openai.com/v1/' });
   assert.equal((await prefs.get()).aiEndpoint, 'https://api.openai.com/v1');
 });
 
-test('previous custom endpoints fall back to defaults without losing provider or encrypted API key', async t => {
+test('stored invalid endpoints fall back to defaults without losing provider or encrypted API key', async t => {
   const directory = await mkdtemp(join(tmpdir(), 'nyora-preferences-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
-  await writeFile(join(directory, 'device-preferences.json'), JSON.stringify({ version: 1, preferences: { aiProvider: 'anthropic', aiEndpoint: 'https://old-custom.example.org/v1', aiModel: 'kept-model' }, encryptedAiKey: Buffer.from('ciphertext').toString('base64') }));
+  await writeFile(join(directory, 'device-preferences.json'), JSON.stringify({ version: 1, preferences: { aiProvider: 'anthropic', aiEndpoint: 'http://old-custom.example.org/v1', aiModel: 'kept-model' }, encryptedAiKey: Buffer.from('ciphertext').toString('base64') }));
   const encryption = { isEncryptionAvailable: () => true, decryptString: () => 'synthetic-kept-key', encryptString: () => Buffer.from('ciphertext') };
   const prefs = new DevicePreferences(directory, encryption);
   const value = await prefs.get();

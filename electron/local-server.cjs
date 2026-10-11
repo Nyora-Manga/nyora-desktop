@@ -36,8 +36,20 @@ class LocalAppServer {
   get origin() { return this.#origin; }
   get indexUrl() { return this.#origin && `${this.#origin}/index.html`; }
 
-  async start() {
+  // The origin is the renderer's storage partition: the Cache API holds the
+  // ~125 MB of downloaded translation/colorization models under it. Reusing the
+  // previous launch's port keeps that origin (and those models) stable; a busy
+  // or invalid preference falls back to an ephemeral port.
+  async start(preferredPort) {
     if (this.#server) throw new Error('Local application server is already running');
+    if (Number.isInteger(preferredPort) && preferredPort >= 1024 && preferredPort <= 65535) {
+      try { return await this.#listen(preferredPort); }
+      catch (error) { if (this.#server) throw error; }
+    }
+    return this.#listen(0);
+  }
+
+  async #listen(port) {
     // Electron's patched fs supports paths inside app.asar. Resolve each served
     // asset too: a bundled symlink may never expose files outside dist.
     this.#root = await realpath(this.distDirectory);
@@ -54,7 +66,7 @@ class LocalAppServer {
       await new Promise((resolve, reject) => {
         const fail = error => { server.off('listening', ready); reject(error); };
         const ready = () => { server.off('error', fail); resolve(); };
-        server.once('error', fail); server.once('listening', ready); server.listen(0, '127.0.0.1');
+        server.once('error', fail); server.once('listening', ready); server.listen(port, '127.0.0.1');
       });
       this.#origin = `http://127.0.0.1:${server.address().port}`;
       this.#secret = randomBytes(32);

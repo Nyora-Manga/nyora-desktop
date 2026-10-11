@@ -140,3 +140,26 @@ test('offline pages are bound to one opaque book and page with no filesystem arg
   assert.throws(() => server.localMediaUrl('../private', 0), /Invalid/);
   assert.throws(() => server.localMediaUrl(id, -1), /Invalid/);
 });
+
+test('a preferred port keeps the renderer origin stable and a busy one falls back', async t => {
+  const { dist, server: first } = await fixture(t);
+  const port = Number(new URL(first.origin).port);
+  const image = async () => ({ bytes: Buffer.from('image'), contentType: 'image/png' });
+  // Busy: the first server still owns the port, so the second takes another.
+  const busy = new LocalAppServer({ distDirectory: dist, image });
+  await busy.start(port);
+  assert.notEqual(busy.origin, first.origin);
+  assert.equal((await raw(busy, '/index.html')).status, 200);
+  await busy.stop();
+  // Free again: a relaunch reuses the same origin, so its model cache survives.
+  await first.stop();
+  const relaunch = new LocalAppServer({ distDirectory: dist, image });
+  await relaunch.start(port);
+  t.after(() => relaunch.stop());
+  assert.equal(relaunch.origin, `http://127.0.0.1:${port}`);
+  // Invalid preferences are ignored rather than trusted.
+  const invalid = new LocalAppServer({ distDirectory: dist, image });
+  await invalid.start(80);
+  assert.notEqual(Number(new URL(invalid.origin).port), 80);
+  await invalid.stop();
+});

@@ -92,6 +92,7 @@ const lookupSource = (sourceId) => {
 };
 const verification = new SourceVerification(lookupSource);
 const { CONTENT_SECURITY_POLICY: CSP } = require('./content-policy.cjs');
+const { allowAllCors } = require('./cors.cjs');
 
 function protectSession(ses, remote) {
   const screenWakeLock = (contents, permission, details) => Boolean(!remote && !quitting
@@ -349,6 +350,7 @@ function registerCommands() {
 async function createMainWindow() {
   const local = session.fromPartition('persist:local-ui', { cache: true });
   protectSession(local, false);
+  allowAllCors(local, () => localServer?.origin);
   const { maximized, ...bounds } = await windowState.restore(screen.getAllDisplays());
   mainWindow = new BrowserWindow({
     title: 'Nyora', ...bounds, minWidth: Math.min(860, bounds.width), minHeight: Math.min(600, bounds.height),
@@ -399,7 +401,18 @@ app.whenReady().then(async () => {
       return image;
     } catch (error) { verification.imageResult(url, error, { checkpoint }); throw error; }
   } });
-  await localServer.start();
+  // Same port → same renderer origin → downloaded AI models stay cached.
+  const originFile = path.join(app.getPath('userData'), 'device', 'local-origin.json');
+  let preferredPort;
+  try { preferredPort = JSON.parse(fs.readFileSync(originFile, 'utf8')).port; } catch { /* first launch or unreadable: ephemeral port */ }
+  await localServer.start(preferredPort);
+  const port = Number(new URL(localServer.origin).port);
+  if (port !== preferredPort) {
+    try {
+      fs.mkdirSync(path.dirname(originFile), { recursive: true, mode: 0o700 });
+      fs.writeFileSync(originFile, JSON.stringify({ version: 1, port }) + '\n', { mode: 0o600 });
+    } catch { /* models re-download next launch; never blocks startup */ }
+  }
   const resourceRoot = app.isPackaged ? process.resourcesPath : path.resolve(__dirname, '../resources');
   const helperRoot = path.join(resourceRoot, 'helper');
   const manifestFile = path.join(helperRoot, 'manifest.json');
