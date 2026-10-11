@@ -79,6 +79,8 @@ export function attachOverlay(img) {
         ov.appendChild(mask);
         d.style.color = textColorFor(b.bg);
         d.style.hyphens = 'none';
+        // Any target language may be RTL (Arabic, Hebrew, Persian, Urdu…).
+        d.dir = 'auto';
         const lettering = document.createElement('span');
         lettering.style.cssText = 'display:block;width:100%;';
         // Decorative separators are natural phrase breaks, not new hyphens.
