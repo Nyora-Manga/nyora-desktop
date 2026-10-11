@@ -20,4 +20,7 @@ jobs:
       - name: Verify and mirror both architectures
         env:
           GH_TOKEN: ${{ github.token }}
+          # Authenticated reads of the public upstream release: the anonymous
+          # API limit is shared per runner IP and returned 403 mid-mirror.
+          UPSTREAM_TOKEN: ${{ github.token }}
         run: node distribution/mirror-release.mjs

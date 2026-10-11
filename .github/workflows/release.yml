@@ -11,6 +11,22 @@ concurrency:
   group: desktop-${{ github.ref }}
   cancel-in-progress: false
 jobs:
+  gate:
+    name: Decide whether to publish
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    outputs:
+      release: ${{ steps.decide.outputs.release }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - id: decide
+        run: node scripts/release-gate.mjs
   build:
     name: ${{ matrix.platform }} / ${{ matrix.arch }}
     timeout-minutes: 90
@@ -95,8 +111,8 @@ jobs:
           retention-days: 7
   publish:
     name: Publish all six targets
-    needs: build
-    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [gate, build]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.gate.outputs.release == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
