@@ -1,10 +1,10 @@
 {
   "name": "nyora-desktop",
   "desktopName": "nyora-desktop.desktop",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "type": "module",
-  "description": "Nyora manga reader for macOS, Windows and Linux \u2014 Electron desktop",
+  "description": "Nyora manga reader for macOS, Windows and Linux — Electron desktop",
   "scripts": {
     "build:frontend": "node scripts/build-frontend.mjs",
     "dev:frontend": "node scripts/dev-frontend.mjs",
